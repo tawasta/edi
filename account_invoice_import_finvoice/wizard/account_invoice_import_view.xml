@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="account_invoice_import_form" model="ir.ui.view">
+        <field name="name">account.invoice.import.finvoice.form</field>
+        <field name="model">account.invoice.import</field>
+        <field name="inherit_id" ref="account_invoice_import.account_invoice_import_form"/>
+        <field name="arch"  type="xml">
+            <ul name="supported_formats_list" position="inside">
+                <li><b><a href="http://www.finanssiala.fi/finvoice" target="_blank">Finvoice</a></b> as XML file.</li>
+            </ul>
+        </field>
+    </record>
+
+</odoo>
