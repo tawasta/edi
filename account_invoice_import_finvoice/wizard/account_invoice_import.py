@@ -230,17 +230,23 @@ class AccountInvoiceImport(models.TransientModel):
             amount_total = _to_float(amount_total_xpath[0].text)
 
         epi_details = xml_root.xpath("./EpiDetails", namespaces=namespaces)
-        iban_xpath = bic_xpath = False
+        iban_xpath = bic_xpath = ref_number = False
 
         if epi_details:
             iban_xpath = epi_details[0].xpath(
                 "./EpiPartyDetails/EpiBeneficiaryPartyDetails"
                 "/EpiAccountID[@IdentificationSchemeName='IBAN']",
                 namespaces=namespaces)
-            bic_xpath = xml_root.xpath(
+            bic_xpath = epi_details[0].xpath(
                 "./EpiPartyDetails/EpiBfiPartyDetails"
                 "/EpiBfiIdentifier[@IdentificationSchemeName='BIC']",
                 namespaces=namespaces)
+            reference_xpath = epi_details[0].xpath(
+                "./EpiPaymentInstructionDetails/EpiRemittanceInfoIdentifier"
+            )
+
+            ref_number = reference_xpath and reference_xpath[0].text or False
+
         attachments = self.get_finvoice_attachments(xml_root, namespaces)
         res_lines = []
         counters = {'lines': 0.0}
@@ -269,6 +275,12 @@ class AccountInvoiceImport(models.TransientModel):
             'lines': res_lines,
             'attachments': attachments,
         }
+
+        if hasattr(self, 'ref_number'):
+            res['ref_number'] = ref_number
+
+        if hasattr(self, 'payment_reference'):
+            res['payment_reference'] = ref_number
 
         logger.info('Result of Finvoice XML parsing: %s', res)
 
