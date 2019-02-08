@@ -179,17 +179,17 @@ class AccountInvoiceImport(models.TransientModel):
             namespaces=namespaces)
         supplier_dict = self.finvoice_parse_supplier_party(
             supplier_xpath[0], namespaces)
-        customer_xpath_party = xml_root.xpath(
+        customer_xpath = xml_root.xpath(
             './BuyerPartyDetails',
             namespaces=namespaces)
-        company_dict_full = self.finvoice_parse_party(
-            customer_xpath_party[0], 'Buyer', namespaces)
+        company_dict_full = self.finvoice_parse_customer_party(
+            customer_xpath[0], namespaces)
         company_dict = {}
         # We only take the "official references" for company_dict
         if company_dict_full.get('vat'):
             company_dict['vat'] = company_dict_full['vat']
-        if company_dict_full.get('business_id'):
-            company_dict['business_id'] = company_dict_full['business_id']
+        if company_dict_full.get('ref'):
+            company_dict['ref'] = company_dict_full['ref']
         date_xpath = xml_root.xpath(
             './InvoiceDetails/InvoiceDate', namespaces=namespaces)
 
