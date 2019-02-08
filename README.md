@@ -10,5 +10,7 @@ Available addons
 ----------------
 addon | version | summary
 --- | --- | ---
+[account_invoice_import_finvoice](account_invoice_import_finvoice/) | 10.0.0.1.0 | Import Finvoice XML supplier invoices/refunds
+[base_finvoice](base_finvoice/) | 10.0.0.1.0 | Base module for Finvoice
 
 [//]: # (end addons)
