@@ -3,6 +3,7 @@ from odoo import models, api, tools, _
 from StringIO import StringIO
 from lxml import etree
 from odoo.exceptions import UserError
+import re
 
 import logging
 logger = logging.getLogger(__name__)
@@ -23,21 +24,21 @@ class BaseFinvoice(models.AbstractModel):
         return product_dict
 
     @api.model
-    def finvoice_parse_customer_party(self, customer_party_node, ns):
+    def finvoice_parse_customer_party(self, party_node, ns):
         partner_dict = \
-            self.finvoice_parse_party(customer_party_node[0], 'Buyer', ns)
+            self.finvoice_parse_party(party_node, 'Buyer', ns)
         return partner_dict
 
     @api.model
-    def finvoice_parse_supplier_party(self, customer_party_node, ns):
+    def finvoice_parse_supplier_party(self, party_node, ns):
         partner_dict = \
-            self.finvoice_parse_party(customer_party_node[0], 'Seller', ns)
+            self.finvoice_parse_party(party_node, 'Seller', ns)
         return partner_dict
 
     @api.model
-    def finvoice_parse_delivery_party(self, customer_party_node, ns):
+    def finvoice_parse_delivery_party(self, party_node, ns):
         partner_dict = \
-            self.finvoice_parse_party(customer_party_node[0], 'Delivery', ns)
+            self.finvoice_parse_party(party_node, 'Delivery', ns)
         return partner_dict
 
     @api.model
@@ -57,11 +58,18 @@ class BaseFinvoice(models.AbstractModel):
         website_xpath = party_node.xpath(
             './%sPartyIdentifierUrlText' % party_type, namespaces=ns)
 
-        # TODO: add business_id to fields if it exists
+        vat = vat_xpath and vat_xpath[0].text or False
+        ref = partner_ref_xpath and partner_ref_xpath[0].text or False
+
+        # Can't find a VAT, use business id instead
+        if not vat and ref:
+            # TODO: this is pretty unreliable
+            vat = 'FI%s' % re.sub('[^0-9]', '', ref)
 
         partner_dict = {
-            'ref': partner_ref_xpath and partner_ref_xpath[0].text or False,
-            'vat': vat_xpath and vat_xpath[0].text or False,
+            'business_id': ref,
+            'ref': ref,
+            'vat': vat,
             'name': partner_name_xpath and partner_name_xpath[0].text or False,
             'email': email_xpath and email_xpath[0].text or False,
             'website': website_xpath and website_xpath[0].text or False,
@@ -74,6 +82,10 @@ class BaseFinvoice(models.AbstractModel):
         if address_xpath:
             address_dict = self.finvoice_parse_address(address_xpath[0], ns)
             partner_dict.update(address_dict)
+
+        print party_type
+        print partner_dict
+
         return partner_dict
 
     @api.model
