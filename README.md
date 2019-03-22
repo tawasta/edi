@@ -1,5 +1,6 @@
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Build Status](https://travis-ci.org/Tawasta/edi.svg?branch=10.0)](https://travis-ci.org/Tawasta/edi)
-
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8f089679fb61489a895683e71ca77f8b)](https://www.codacy.com/app/Tawasta/edi?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Tawasta/edi&amp;utm_campaign=Badge_Grade)
 
 EDI Modules
 ===========
