@@ -83,9 +83,6 @@ class BaseFinvoice(models.AbstractModel):
             address_dict = self.finvoice_parse_address(address_xpath[0], ns)
             partner_dict.update(address_dict)
 
-        print party_type
-        print partner_dict
-
         return partner_dict
 
     @api.model
