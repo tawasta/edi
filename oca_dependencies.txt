@@ -1,1 +1,2 @@
 edi https://github.com/tawasta/edi
+l10n-finland https://github.com/Tawasta/l10n-finland
