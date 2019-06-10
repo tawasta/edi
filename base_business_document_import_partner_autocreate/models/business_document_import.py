@@ -21,7 +21,7 @@ class BusinessDocumentImport(models.AbstractModel):
             )
         except UserError:
             # Partner can't be matched. Try to create a new one
-            _logger.Warning(_("Could not find partner "))
+            _logger.warning(_("Could not find partner "))
             res_partner = self.env['res.partner']
 
             partner = res_partner.create(partner_dict)
