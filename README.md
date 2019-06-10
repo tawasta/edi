@@ -12,6 +12,7 @@ Available addons
 addon | version | summary
 --- | --- | ---
 [account_invoice_import_finvoice](account_invoice_import_finvoice/) | 10.0.0.1.2 | Import Finvoice XML supplier invoices/refunds
+[base_business_document_import_partner_autocreate](base_business_document_import_partner_autocreate/) | 10.0.1.0.0 | If partner is missing on import, automatically create one
 [base_finvoice](base_finvoice/) | 10.0.0.1.1 | Base module for Finvoice
 
 [//]: # (end addons)
