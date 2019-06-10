@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 from odoo import models, _
 from odoo.exceptions import UserError
