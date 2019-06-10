@@ -24,7 +24,7 @@ def _to_float(string_number):
             # TODO: Add support for comma as thousands separator (1,000.00)
             msg = _(
                 'Using comma as thousands separator not supported! (%s)') \
-                    % string_number
+                % string_number
             raise UserError(msg)
 
         float_number = float(string_number.replace(',', '.'))

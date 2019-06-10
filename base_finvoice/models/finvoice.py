@@ -92,7 +92,7 @@ class BaseFinvoice(models.AbstractModel):
             or False
         zip_xpath = address_node.xpath(
             './%sPostCodeIdentifier' % party_type, namespaces=ns)
-        zip = zip_xpath and zip_xpath[0].text and \
+        zipcode = zip_xpath and zip_xpath[0].text and \
             zip_xpath[0].text.replace(' ', '') or False
 
         street_xpath = address_node.xpath(
@@ -106,7 +106,7 @@ class BaseFinvoice(models.AbstractModel):
         address_dict = {
             'street': street,
             'city': city,
-            'zip': zip,
+            'zip': zipcode,
             'country_code': country_code,
         }
         return address_dict
