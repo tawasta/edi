@@ -22,8 +22,9 @@ def _to_float(string_number):
     else:
         if '.' in string_number and ',' in string_number:
             # TODO: Add support for comma as thousands separator (1,000.00)
-            msg = _('Using comma as thousands separator not supported! (%s)') % \
-                  string_number
+            msg = _(
+                'Using comma as thousands separator not supported! (%s)') \
+                    % string_number
             raise UserError(msg)
 
         float_number = float(string_number.replace(',', '.'))
@@ -40,7 +41,8 @@ class AccountInvoiceImport(models.TransientModel):
         if (xml_root.tag and xml_root.tag == 'Finvoice'):
             return self.parse_finvoice_invoice(xml_root)
         else:
-            return super(AccountInvoiceImport, self).parse_xml_invoice(xml_root)
+            return super(AccountInvoiceImport, self).parse_xml_invoice(
+                xml_root)
 
     def get_finvoice_attachments(self, xml_root, namespaces):
         attach_xpaths = xml_root.xpath(
@@ -96,7 +98,7 @@ class AccountInvoiceImport(models.TransientModel):
         price_subtotal_xpath = iline.xpath(
             "./RowVatExcludedAmount", namespaces=namespaces)
         price_subtotal = price_subtotal_xpath and \
-                         _to_float(price_subtotal_xpath[0].text) or False
+            _to_float(price_subtotal_xpath[0].text) or False
 
         if not price_subtotal:
             # Try to find the subtotal from RowAmount
@@ -111,7 +113,7 @@ class AccountInvoiceImport(models.TransientModel):
                 price_subtotal_vat_xpath[0].text)
 
             price_subtotal = _to_float(price_subtotal_taxable) \
-                             - _to_float(price_subtotal_vat)
+                - _to_float(price_subtotal_vat)
 
         if not price_subtotal:
             return False
@@ -127,7 +129,7 @@ class AccountInvoiceImport(models.TransientModel):
             'amount_type': 'percent',
             'amount': _to_float(taxes_xpath[0].text) or 0.0,
             'price_include': False,  # The subtotal is given as untaxed
-            }
+        }
         taxes.append(tax_dict)
 
         vals = {
@@ -138,13 +140,13 @@ class AccountInvoiceImport(models.TransientModel):
             'price_subtotal': price_subtotal,
             'name': name,
             'taxes': taxes,
-            }
+        }
 
         return vals
 
     @api.model
     def parse_finvoice_invoice(self, xml_root):
-        """Parse FINVOICE Invoice XML file"""
+        """Parse FINVOICE Invoice XML file."""
         namespaces = xml_root.nsmap
 
         logger.debug('XML file namespaces=%s', namespaces)
@@ -154,7 +156,6 @@ class AccountInvoiceImport(models.TransientModel):
         finvoice_version = xml_root.attrib.get('Version') or '3.0'
         # Check XML schema to avoid headaches trying to import invalid files
         self._finvoice_check_xml_schema(xml_string, version=finvoice_version)
-        prec = self.env['decimal.precision'].precision_get('Account')
 
         doc_type_xpath = xml_root.xpath(
             "./InvoiceDetails/InvoiceTypeCode", namespaces=namespaces)

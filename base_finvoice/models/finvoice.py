@@ -89,11 +89,11 @@ class BaseFinvoice(models.AbstractModel):
     def finvoice_parse_address(self, address_node, party_type, ns):
         country_code_xpath = address_node.xpath('./CountryCode', namespaces=ns)
         country_code = country_code_xpath and country_code_xpath[0].text \
-                       or False
+            or False
         zip_xpath = address_node.xpath(
             './%sPostCodeIdentifier' % party_type, namespaces=ns)
         zip = zip_xpath and zip_xpath[0].text and \
-              zip_xpath[0].text.replace(' ', '') or False
+            zip_xpath[0].text.replace(' ', '') or False
 
         street_xpath = address_node.xpath(
             './%sStreetName' % party_type, namespaces=ns)
