@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import models, _
+from odoo import models, _, api
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
@@ -9,9 +9,12 @@ _logger = logging.getLogger(__name__)
 class BusinessDocumentImport(models.AbstractModel):
     _inherit = 'business.document.import'
 
+    @api.model
     def _match_partner(
             self, partner_dict, chatter_msg, partner_type='supplier'):
-        """If partner is not found, auto-create one."""
+        """
+        If partner is not found, auto-create one
+        """
         try:
             # Try to match the partner
             return super(BusinessDocumentImport, self)._match_partner(
@@ -21,7 +24,7 @@ class BusinessDocumentImport(models.AbstractModel):
             )
         except UserError:
             # Partner can't be matched. Try to create a new one
-            _logger.warning(_("Could not find partner "))
+            _logger.warning(_("Could not find a partner "))
             res_partner = self.env['res.partner']
 
             partner = res_partner.create(partner_dict)
