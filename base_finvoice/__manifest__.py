@@ -23,7 +23,7 @@
     'name': 'Base Finvoice',
     'summary': 'Base module for Finvoice',
     'category': 'Hidden',
-    'version': '10.0.0.1.1',
+    'version': '10.0.0.1.2',
     'website': 'https://tawasta.fi',
     'author': 'Oy Tawasta Technologies Ltd.',
     'license': 'AGPL-3',
