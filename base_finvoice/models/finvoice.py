@@ -17,9 +17,20 @@ class BaseFinvoice(models.AbstractModel):
         code_xpath = line_node.xpath(
             "./ArticleIdentifier", namespaces=ns)
 
+        name_xpath = line_node.xpath(
+            "./ArticleName", namespaces=ns)
+
+        price_xpath = line_node.xpath(
+            "./UnitPriceAmount", namespaces=ns)
+
         product_dict = {
             'code': code_xpath and code_xpath[0].text or False,
-            }
+            'name': name_xpath and name_xpath[0].text or False,
+        }
+
+        if price_xpath and price_xpath[0].text:
+            list_price = float(price_xpath[0].text.replace(",", "."))
+            product_dict['list_price'] = list_price
 
         return product_dict
 
