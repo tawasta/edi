@@ -108,6 +108,7 @@ class AccountInvoiceImport(models.TransientModel):
             _to_float(price_subtotal_xpath[0].text) or False
 
         if not price_subtotal:
+            # RowVatExcludedAmount is not set
             # Try to find the subtotal from RowAmount
             price_subtotal_taxable_xpath = iline.xpath(
                 "./RowAmount", namespaces=namespaces)
@@ -124,10 +125,16 @@ class AccountInvoiceImport(models.TransientModel):
 
         if not price_subtotal:
             return False
+
+        # It seems UnitPriceAmount can be with or without tax, and it is
+        #  not necessarily specified anywhere.
+        #  Because of that, use subtotal/qty as unit price
+        '''
         if price_unit_xpath:
             price_unit = _to_float(price_unit_xpath[0].text)
         else:
-            price_unit = price_subtotal / qty
+        '''
+        price_unit = price_subtotal / qty
         counters['lines'] += price_subtotal
         taxes_xpath = iline.xpath("./RowVatRatePercent", namespaces=namespaces)
 
