@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, api, tools, _
-from StringIO import StringIO
 from lxml import etree
-from odoo.exceptions import UserError
 import re
 
 import logging
@@ -29,7 +27,12 @@ class BaseFinvoice(models.AbstractModel):
         }
 
         if price_xpath and price_xpath[0].text:
-            list_price = float(price_xpath[0].text.replace(",", "."))
+            # Replace comma with period
+            list_price = price_xpath[0].text.replace(',', '.')
+
+            # Replace non-numeric
+            list_price = re.sub('[^0-9.]', '', list_price)
+
             product_dict['list_price'] = list_price
 
         return product_dict
@@ -125,13 +128,13 @@ class BaseFinvoice(models.AbstractModel):
 
     @api.model
     def _finvoice_check_xml_schema(self, xml_string, version='3.0'):
-        '''Validate the XML file against the XSD'''
+        """Validate the XML file against the XSD"""
         xsd_file = 'base_finvoice/data/xsd-%s/Finvoice%s.xsd' % (
             version, version)
         xsd_etree_obj = etree.parse(tools.file_open(xsd_file))
         official_schema = etree.XMLSchema(xsd_etree_obj)
         try:
-            t = etree.parse(StringIO(xml_string))
+            t = etree.ElementTree(etree.fromstring(xml_string))
             official_schema.assertValid(t)
         except Exception, e:
             # if the validation of the XSD fails, we arrive here
@@ -140,7 +143,7 @@ class BaseFinvoice(models.AbstractModel):
                 "The XML file is invalid against the XML Schema Definition")
             logger.warning(xml_string)
             logger.warning(e)
-            raise UserError(_(
+            logger.error(_(
                 "The Finvoice XML file is not valid against the official "
                 "XML Schema Definition. The XML file and the "
                 "full error have been written in the server logs. "
