@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import re
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from datetime import datetime
@@ -10,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def _to_float(string_number):
-    # Format a '123,45' string as float 123.45
+    # Format a '1 234,56' string as float 1234.56
 
     float_number = 0
 
@@ -27,7 +28,13 @@ def _to_float(string_number):
                 % string_number
             raise UserError(msg)
 
-        float_number = float(string_number.replace(',', '.'))
+        # Replace comma with period
+        string_number = string_number.replace(',', '.')
+
+        # Replace non-numeric
+        string_number = re.sub('[^0-9.]', '', string_number)
+
+        float_number = float(string_number)
 
     return float_number
 
