@@ -138,8 +138,8 @@ class AccountInvoiceImport(models.TransientModel):
         counters['lines'] += price_subtotal
         taxes_xpath = iline.xpath("./RowVatRatePercent", namespaces=namespaces)
 
+        taxes = []
         if taxes_xpath:
-            taxes = []
             tax_dict = {
                 'amount_type': 'percent',
                 'amount': _to_float(taxes_xpath[0].text) or 0.0,
