@@ -91,7 +91,8 @@ class BaseFinvoice(models.AbstractModel):
             './%sPostalAddressDetails' % party_type, namespaces=ns)
 
         if address_xpath:
-            address_dict = self.finvoice_parse_address(address_xpath[0], ns)
+            address_dict = self.finvoice_parse_address(
+                address_xpath[0], party_type, ns)
             partner_dict.update(address_dict)
 
         return partner_dict
