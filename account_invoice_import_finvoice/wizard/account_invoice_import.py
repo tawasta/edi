@@ -116,10 +116,17 @@ class AccountInvoiceImport(models.TransientModel):
             price_subtotal_vat_xpath = iline.xpath(
                 "./RowVatAmount", namespaces=namespaces)
 
-            price_subtotal_taxable = _to_float(
-                price_subtotal_taxable_xpath[0].text)
-            price_subtotal_vat = _to_float(
-                price_subtotal_vat_xpath[0].text)
+            if price_subtotal_taxable_xpath:
+                price_subtotal_taxable = _to_float(
+                    price_subtotal_taxable_xpath[0].text)
+            else:
+                price_subtotal_taxable = 0
+
+            if price_subtotal_vat_xpath:
+                price_subtotal_vat = _to_float(
+                    price_subtotal_vat_xpath[0].text)
+            else:
+                price_subtotal_vat = 0
 
             price_subtotal = _to_float(price_subtotal_taxable) \
                 - _to_float(price_subtotal_vat)
