@@ -85,6 +85,7 @@ class AccountInvoiceImport(models.TransientModel):
             "DeliveredQuantity", namespaces=namespaces)
 
         uom = {}
+        qty = 1  # Format qty, if no qty xpath is found
         if qty_xpath:
             qty = _to_float(qty_xpath[0].text)
 
