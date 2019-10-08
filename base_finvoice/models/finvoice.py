@@ -75,10 +75,17 @@ class BaseFinvoice(models.AbstractModel):
         vat = vat_xpath and vat_xpath[0].text or False
         ref = partner_ref_xpath and partner_ref_xpath[0].text or False
 
+        # Hacks for insufficient/defective Finvoice XML
+        bid_regex = "^[0-9]{7}[-][0-9]$"
+
         # Can't find a VAT, use business id instead
-        if not vat and ref:
+        if not vat and ref and re.search(bid_regex, ref):
             # TODO: this is pretty unreliable
             vat = 'FI%s' % re.sub('[^0-9]', '', ref)
+
+        # If Business ID is given in VAT field
+        elif vat and re.search(bid_regex, vat):
+            vat = 'FI%s' % re.sub('[^0-9]', '', vat)
 
         partner_dict = {
             'business_id': ref,
