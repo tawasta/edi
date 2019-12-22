@@ -185,14 +185,15 @@ class AccountInvoiceImport(models.TransientModel):
         inv_type = 'in_invoice'
         if doc_type_xpath:
             inv_type_code = doc_type_xpath[0].text
-            if inv_type_code not in ['INV01', 'INV02', 'INV08']:
+
+            if inv_type_code in ['INV01', 'INV03', 'INV08']:
+                inv_type = 'in_invoice'
+            elif inv_type_code == 'INV02':
+                inv_type = 'in_refund'
+            else:
                 raise UserError(_(
                     "This Finvoice XML file is not an invoice/refund file "
                     "(InvoiceTypeCode is %s") % inv_type_code)
-            if inv_type_code in ['INV01', 'INV08']:
-                inv_type = 'in_invoice'
-            if inv_type_code == 'INV02':
-                inv_type = 'in_refund'
         inv_number_xpath = xml_root.xpath(
             './InvoiceDetails/InvoiceNumber', namespaces=namespaces)
         ord_number_xpath = xml_root.xpath(
