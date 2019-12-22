@@ -214,7 +214,12 @@ class AccountInvoiceImport(models.TransientModel):
         company_dict = {}
         # We only take the "official references" for company_dict
         if company_dict_full.get('vat'):
-            company_dict['vat'] = company_dict_full['vat']
+            vat = company_dict_full['vat']
+            # Support for incomplete VAT codes
+            # 12345671 becomes FI12345671
+            vat = re.sub(r'(^[0-9]{8}$)', r'FI\1', vat)
+
+            company_dict['vat'] = vat
         if company_dict_full.get('ref'):
             company_dict['ref'] = company_dict_full['ref']
         date_xpath = xml_root.xpath(

@@ -23,7 +23,7 @@
     'name': 'Account Invoice Import Finvoice',
     'summary': 'Import Finvoice XML supplier invoices/refunds',
     'category': 'Accounting & Finance',
-    'version': '10.0.0.1.9',
+    'version': '10.0.0.1.10',
     'website': 'https://tawasta.fi',
     'author': 'Oy Tawasta Technologies Ltd.',
     'license': 'AGPL-3',
