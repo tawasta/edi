@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ##############################################################################
 #
 #    Author: Oy Tawasta OS Technologies Ltd.
@@ -23,12 +22,12 @@
     'name': 'Base Business Document Import: Auto-create partners',
     'summary': 'If partner is missing on import, automatically create one',
     'category': 'Extra tools',
-    'version': '10.0.1.0.0',
-    'website': 'https://tawasta.fi',
-    'author': 'Oy Tawasta Technologies Ltd.',
+    'version': '12.0.1.0.0',
+    'website': 'https://github.com/Tawasta/edi',
+    'author': 'Tawasta',
     'license': 'AGPL-3',
     'application': False,
-    'installable': True,
+    'installable': False,
     'depends': [
         'base_business_document_import',
     ],
