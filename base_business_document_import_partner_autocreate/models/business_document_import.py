@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from openerp import models, _, api
-from openerp.exceptions import ValidationError
+from openerp.exceptions import Warning as UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class BusinessDocumentImport(models.AbstractModel):
                 chatter_msg=chatter_msg,
                 partner_type=partner_type,
             )
-        except ValidationError, e:
+        except UserError, e:
             # Partner can't be matched. Try to create a new one
             _logger.warning(e)
             res_partner = self.env['res.partner']
@@ -32,4 +32,4 @@ class BusinessDocumentImport(models.AbstractModel):
             if partner:
                 return partner
             else:
-                raise ValidationError(_("Could not create a partner"))
+                raise UserError(_("Could not create a partner"))
