@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from odoo import models, _, api
-from odoo.exceptions import UserError
+from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class BusinessDocumentImport(models.AbstractModel):
                 chatter_msg=chatter_msg,
                 partner_type=partner_type,
             )
-        except UserError, e:
+        except ValidationError, e:
             # Partner can't be matched. Try to create a new one
             _logger.warning(e)
             res_partner = self.env['res.partner']
@@ -32,4 +32,4 @@ class BusinessDocumentImport(models.AbstractModel):
             if partner:
                 return partner
             else:
-                raise UserError(_("Could not create a partner"))
+                raise ValidationError(_("Could not create a partner"))

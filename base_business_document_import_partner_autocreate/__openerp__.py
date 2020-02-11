@@ -23,7 +23,7 @@
     'name': 'Base Business Document Import: Auto-create partners',
     'summary': 'If partner is missing on import, automatically create one',
     'category': 'Extra tools',
-    'version': '10.0.1.0.0',
+    'version': '8.0.1.0.0',
     'website': 'https://tawasta.fi',
     'author': 'Oy Tawasta Technologies Ltd.',
     'license': 'AGPL-3',
