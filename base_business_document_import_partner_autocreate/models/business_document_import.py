@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import models, _, api
-from odoo.exceptions import ValidationError
+from openerp import models, _, api
+from openerp.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
