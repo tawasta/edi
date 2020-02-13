@@ -22,9 +22,9 @@ class BusinessDocumentImport(models.AbstractModel):
                 chatter_msg=chatter_msg,
                 partner_type=partner_type,
             )
-        except UserError:
+        except UserError, e:
             # Partner can't be matched. Try to create a new one
-            _logger.warning(_("Could not find a partner "))
+            _logger.warning(e)
             res_partner = self.env['res.partner']
 
             partner = res_partner.create(partner_dict)
