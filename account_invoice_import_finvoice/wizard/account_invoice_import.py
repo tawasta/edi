@@ -108,14 +108,14 @@ class AccountInvoiceImport(models.TransientModel):
         price_subtotal = price_subtotal_xpath and \
             _to_float(price_subtotal_xpath[0].text) or False
 
+        price_subtotal_taxable_xpath = iline.xpath(
+            "./RowAmount", namespaces=namespaces)
+        price_subtotal_vat_xpath = iline.xpath(
+            "./RowVatAmount", namespaces=namespaces)
+
         if not price_subtotal:
             # RowVatExcludedAmount is not set
             # Try to find the subtotal from RowAmount
-            price_subtotal_taxable_xpath = iline.xpath(
-                "./RowAmount", namespaces=namespaces)
-            price_subtotal_vat_xpath = iline.xpath(
-                "./RowVatAmount", namespaces=namespaces)
-
             if price_subtotal_taxable_xpath:
                 price_subtotal_taxable = _to_float(
                     price_subtotal_taxable_xpath[0].text)
@@ -146,14 +146,28 @@ class AccountInvoiceImport(models.TransientModel):
         counters['lines'] += price_subtotal
         taxes_xpath = iline.xpath("./RowVatRatePercent", namespaces=namespaces)
 
-        taxes = []
+        tax_percent = 0.0
+
         if taxes_xpath:
-            tax_dict = {
-                'amount_type': 'percent',
-                'amount': _to_float(taxes_xpath[0].text) or 0.0,
-                'price_include': False,  # The subtotal is given as untaxed
-            }
-            taxes.append(tax_dict)
+            tax_percent = _to_float(taxes_xpath[0].text) or 0.0
+        elif price_subtotal_taxable_xpath and price_subtotal_xpath:
+            # Try to get the tax percent from line amounts
+            price_subtotal_taxable = _to_float(
+                price_subtotal_taxable_xpath[0].text)
+            price_subtotal = _to_float(
+                price_subtotal_xpath[0].text)
+
+            tax_percent = round(
+                (price_subtotal_taxable-price_subtotal) / price_subtotal, 2)
+
+        taxes = []
+
+        tax_dict = {
+            'amount_type': 'percent',
+            'amount': tax_percent,
+            'price_include': False,  # The subtotal is given as untaxed
+        }
+        taxes.append(tax_dict)
 
         vals = {
             'product': product_dict,
