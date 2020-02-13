@@ -158,7 +158,8 @@ class AccountInvoiceImport(models.TransientModel):
                 price_subtotal_xpath[0].text)
 
             tax_percent = round(
-                (price_subtotal_taxable-price_subtotal) / price_subtotal, 2)
+                (price_subtotal_taxable - price_subtotal) / price_subtotal,
+                2) * 100
 
         taxes = []
 
