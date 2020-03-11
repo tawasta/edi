@@ -201,9 +201,16 @@ class AccountInvoiceImport(models.TransientModel):
         if doc_type_xpath:
             inv_type_code = doc_type_xpath[0].text
 
-            if inv_type_code in ['INV01', 'INV03', 'INV08']:
+            if inv_type_code in ['INV01', 'INV03', 'INV04', 'INV05', 'INV08']:
+                # INV01 Invoice (Lasku)
+                # INV03 Interest Invoice (Korkolasku)
+                # INV04 Internal Invoice (Sisäinen lasku)
+                # INV05 Collection Bill (Perintälasku)
+                # INV08 Notification Invoice (Huomatuslasku)
+
                 inv_type = 'in_invoice'
             elif inv_type_code == 'INV02':
+                # INV02 Refund (Hyvityslasku)
                 inv_type = 'in_refund'
             else:
                 raise UserError(_(
