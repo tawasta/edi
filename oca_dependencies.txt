@@ -1,4 +1,0 @@
-community-data-files https://github.com/OCA/community-data-files
-edi https://github.com/oca/edi
-edi https://github.com/tawasta/edi
-l10n-finland https://github.com/Tawasta/l10n-finland
