@@ -1,12 +1,10 @@
-import textwrap
 import logging
-from lxml import etree
+import textwrap
 from datetime import datetime
 
-from odoo import api
-from odoo import models
-from odoo import _
-from odoo import tools
+from lxml import etree
+
+from odoo import _, api, models, tools
 from odoo.tools import float_repr
 
 _logger = logging.getLogger(__name__)
