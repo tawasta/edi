@@ -1,4 +1,5 @@
 import logging
+import re
 import textwrap
 from datetime import datetime
 
@@ -6,6 +7,8 @@ from lxml import etree
 
 from odoo import _, api, models, tools
 from odoo.tools import float_repr
+from odoo.exceptions import UserError, ValidationError
+from odoo.tests.common import Form
 
 _logger = logging.getLogger(__name__)
 
@@ -39,8 +42,7 @@ class AccountEdiFormat(models.Model):
     _inherit = "account.edi.format"
 
     def _is_finvoice(self, filename, tree):
-        # TODO
-        return False
+        return tree.tag == "Finvoice"
 
     def _get_finvoice_values(self, invoice):
         def format_monetary(amount):
@@ -138,12 +140,18 @@ class AccountEdiFormat(models.Model):
             res[invoice] = {"success": True, "attachment": attachment}
         return res
 
-    @api.model
-    def _finvoice_check_xml_schema(self, xml_string, version="3.0"):
-        """Validate the XML file against the XSD"""
+    def _finvoice_get_xml_schema(self, version="3.0"):
         xsd_file = f"account_edi_finvoice/static/schema/Finvoice{version}.xsd"
         xsd_etree_obj = etree.parse(tools.file_open(xsd_file))
         finvoice_schema = etree.XMLSchema(xsd_etree_obj)
+
+        return finvoice_schema
+
+    @api.model
+    def _finvoice_check_xml_schema(self, xml_string, version="3.0"):
+        """Validate the XML file against the XSD"""
+        finvoice_schema = self._finvoice_get_xml_schema(version)
+
         try:
             t = etree.ElementTree(etree.fromstring(xml_string))
             finvoice_schema.assertValid(t)
@@ -164,3 +172,341 @@ class AccountEdiFormat(models.Model):
 
             _logger.error(msg)
         return True
+
+    def _create_invoice_from_xml_tree(self, filename, tree):
+        self.ensure_one()
+        if self._is_finvoice(filename, tree):
+            return self._import_finvoice(tree, self.env["account.move"])
+        return super()._create_invoice_from_xml_tree(filename, tree)
+
+    def _update_invoice_from_xml_tree(self, filename, tree, invoice):
+        self.ensure_one()
+        if self._is_finvoice(filename, tree):
+            return self._import_finvoice(tree, invoice)
+        return super()._update_invoice_from_xml_tree(filename, tree, invoice)
+
+    def _find_attribute(self, xpath, element, attribute):
+        element = element.xpath(xpath, namespaces=element.nsmap)
+        return element[0].attrib.get(attribute) if element else None
+
+    def _find_values_joined(self, xpath, element, join_character="\n"):
+        """
+        Get a joined string from multiple values
+        """
+        elements = element.xpath(xpath, namespaces=element.nsmap)
+        return join_character.join(x.text for x in elements)
+
+    def _import_finvoice(self, tree, invoice):
+        """
+        Import finvoice document as Odoo invoice
+        """
+
+        def _find_value(xpath, element=tree):
+            return self._find_value(xpath, element, element.nsmap)
+
+        version = "3.0"
+        ns = tree.nsmap
+
+        # Check XML schema to avoid headaches trying to import invalid files
+        finvoice_schema = self._finvoice_get_xml_schema(version)
+        t = etree.ElementTree(tree)
+        finvoice_schema.assertValid(t)
+
+        with Form(invoice) as invoice_form:
+            """
+            # Setting invoice type doesn't seem to be allowed?
+            invoice_form.move_type = self._get_invoice_type(
+                _find_value("./InvoiceDetails/InvoiceTypeCode")
+            )
+            """
+            self_ctx = self.with_company(invoice.company_id)
+
+            # region SellerPartyDetails
+            spd = "SellerPartyDetails"
+
+            business_code = _find_value(f"./{spd}/SellerPartyIdentifier")
+            vat = _find_value(f"./{spd}/SellerOrganisationTaxCode")
+
+            # Hacks for insufficient/defective Finvoice XML
+            business_code_regex = "^[0-9]{7}[-][0-9]$"
+
+            # Can't find a VAT, use business id instead
+            if not vat and re.search(business_code_regex, business_code):
+                # TODO: this is pretty unreliable
+                vat = "FI%s" % re.sub("[^0-9]", "", business_code)
+            elif vat and re.search(business_code_regex, vat):
+                # Business Code is incorrectly given in VAT field (this happens)
+                vat = "FI%s" % re.sub("[^0-9]", "", vat)
+
+            spad = "SellerPostalAddressDetails"
+            partner_vals = {
+                "business_code": business_code,
+                "vat": vat,
+                "name": _find_value(f"./{spd}/SellerOrganisationName"),
+                "phone": _find_value(f"./{spd}/SellerPhoneNumberIdentifier"),
+                "email": _find_value(f"./{spd}/SellerEmailaddressIdentifier"),
+                "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
+                "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
+                "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
+                "company_type": "company",
+            }
+
+            partner_id = self_ctx._retrieve_partner(
+                name=partner_vals.get("name"),
+                phone=partner_vals.get("phone"),
+                mail=partner_vals.get("email"),
+                vat=vat,
+            )
+
+            if not partner_id:
+                _logger.info(
+                    _(
+                        f"Partner not found. Creating a new partner with values: {partner_vals}"
+                    )
+                )
+                partner_id = self.env["res.partner"].create(partner_vals)
+
+            invoice_form.partner_id = partner_id
+            # endregion
+
+            # region InvoiceDetails
+            ind = "InvoiceDetails"
+            invoice_form.ref = _find_value(f"./{ind}/InvoiceNumber")
+
+            invoice_date = _find_value(f"./{ind}/InvoiceDate")
+            invoice_form.invoice_date = datetime.strptime(invoice_date, "%Y%m%d")
+            if hasattr(invoice, "agreement_identifier"):
+                invoice_form.agreement_identifier = _find_value(
+                    f"./{ind}/AgreementIdentifier"
+                )
+
+            invoice_form.narration = self._find_values_joined(
+                f"./{ind}/InvoiceFreeText",
+                tree,
+            )
+
+            ptd = "PaymentTermsDetails"
+            invoice_form.narration += self._find_values_joined(
+                f"./{ind}/{ptd}/PaymentTermsFreeText", tree
+            )
+
+            invoice_date_due = _find_value(f"./{ind}/{ptd}/InvoiceDueDate")
+            invoice_form.invoice_date = datetime.strptime(invoice_date_due, "%Y%m%d")
+
+            # endregion
+
+            # region InvoiceRows
+            lines = tree.xpath("./InvoiceRow", namespaces=ns)
+            for line in lines:
+                with invoice_form.invoice_line_ids.new() as line_form:
+                    # Try to find a product by default code, name or barcode
+                    if _find_value("./BuyerArticleIdentifier", line):
+                        default_code = _find_value("./BuyerArticleIdentifier", line)
+                    else:
+                        default_code = _find_value("./ArticleIdentifier", line)
+                    article_name = _find_value("./ArticleName", line)
+                    article_description = _find_value("./ArticleDescription", line)
+                    ean_code = _find_value("./EanCode", line)
+
+                    product_id = self_ctx._retrieve_product(
+                        default_code=default_code,
+                        name=article_name,
+                        barcode=ean_code,
+                    )
+                    # TODO: An option to auto-create products
+
+                    line_form.product_id = product_id
+
+                    if not article_name and not default_code:
+                        # Comment line
+                        # TODO: comment lines not working yet
+                        # line_form.display_type = "line_note"
+                        # line_form.account_id = False
+                        pass
+
+                    quantity = (
+                        self._to_float(_find_value("./InvoicedQuantity", line)) or 1
+                    )
+                    line_form.quantity = quantity
+
+                    unit_code = self._find_attribute(
+                        "./InvoicedQuantity", line, "QuantityUnitCode"
+                    )
+                    uom = self.env["uom.uom"].search(
+                        [("name", "ilike", unit_code)], limit=1
+                    )
+                    if uom:
+                        line_form.product_uom_id = uom
+                    # TODO: an option to auto-create a missing UOM
+
+                    # Construct a unit price
+
+                    # Try to find UnitPriceAmount
+                    price_unit = _find_value("./UnitPriceAmount", line)
+
+                    if not price_unit:
+                        # Didn't find UnitPriceAmount. Try RowVatExcludedAmount
+                        price_subtotal = _find_value("./RowVatExcludedAmount", line)
+                        if price_subtotal:
+                            price_unit = self._to_float(price_subtotal) / quantity
+
+                    line_form.price_unit = self._to_float(price_unit)
+
+                    line_form.discount = self._to_float(
+                        _find_value("./RowDiscountPercent", line)
+                    )
+
+                    # Construct a line name, if product is not found
+                    line_name = ""
+                    if not product_id:
+                        if article_name:
+                            line_name += f"{article_name}"
+                        if article_description:
+                            line_name += f"{article_description}"
+
+                    line_name += self._find_values_joined("./RowFreeText", line)
+                    line_form.name = line_name
+
+                    # Taxes
+                    # We are not using _retrieve_tax() as it might return a tax with prices included
+                    line_form.tax_ids.clear()
+                    tax_amount = self._to_float(
+                        _find_value("./RowVatRatePercent", line)
+                    )
+                    if tax_amount:
+                        tax_domain = [
+                            ("amount", "=", tax_amount),
+                            ("type_tax_use", "=", invoice_form.journal_id.type),
+                            # The subtotal will be saved as untaxed amount
+                            ("price_include", "=", False),
+                        ]
+
+                        tax = self.env["account.tax"].search(
+                            tax_domain, order="sequence ASC", limit=1
+                        )
+
+                        if not tax:
+                            raise ValidationError(
+                                _(f"Could not find a tax for {tax_amount}")
+                            )
+
+                        line_form.tax_ids.add(tax)
+
+                # TODO: handle SubInvoiceRows
+
+            # endregion
+
+            # region EpiDetails
+            ede = "EpiDetails"
+            payment_reference = invoice_form.payment_reference = _find_value(
+                f"./{ede}/EpiIdentificationDetails/EpiReference"
+            )
+
+            if not payment_reference:
+                # Try to get payment reference from SellersBuyerIdentifier
+                # It's not officially for a payment reference,
+                # but is sometimes incorrectly used as it was
+                payment_reference = invoice_form.payment_reference = _find_value(
+                    f"./{ind}/SellersBuyerIdentifier"
+                )
+
+            invoice_form.payment_reference = payment_reference
+
+            epd = "EpiPartyDetails"
+
+            partner_bank_id = self_ctx._retrieve_bank_account(
+                _find_value(f"./{ede}/{epd}/EpiBeneficiaryPartyDetails/EpiAccountID"),
+                partner_id=partner_id.id,
+                bic=_find_value(f"./{ede}/{epd}/EpiBfiPartyDetails/EpiBfiIdentifier"),
+            )
+
+            invoice_form.partner_bank_id = partner_bank_id
+            # endregion
+
+            invoice = invoice_form.save()
+
+            return invoice
+
+    def _get_invoice_type(self, inv_type_code):
+        """
+        Get invoice type from Finvoice type code
+        """
+
+        if inv_type_code in ["INV01", "INV03", "INV04", "INV05", "INV08"]:
+            # INV01 Invoice (Lasku)
+            # INV03 Interest Invoice (Korkolasku)
+            # INV04 Internal Invoice (Sisäinen lasku)
+            # INV05 Collection Bill (Perintälasku)
+            # INV08 Notification Invoice (Huomatuslasku)
+
+            inv_type = "in_invoice"
+        elif inv_type_code == "INV02":
+            # INV02 Refund (Hyvityslasku)
+            inv_type = "in_refund"
+        else:
+            raise UserError(_(f"This Finvoice XML file is not an invoice/refund file"))
+
+        return inv_type
+
+    def _to_float(self, string_number):
+        # Format a '1 234,56' string as float 1234.56
+
+        float_number = 0
+
+        if isinstance(string_number, float):
+            float_number = string_number
+        elif isinstance(string_number, int):
+            float_number = float(string_number)
+        elif isinstance(string_number, str):
+            if "." in string_number and "," in string_number:
+                # TODO: Add support for comma as thousands separator (1,000.00)
+                msg = _(
+                    f"Using comma as thousands separator not supported! ({string_number})"
+                )
+                raise UserError(msg)
+
+            # Replace comma with period
+            string_number = string_number.replace(",", ".")
+
+            # Replace non-numeric
+            string_number = re.sub("[^\d.-]", "", string_number)
+
+            float_number = float(string_number)
+
+        return float_number
+
+    def _retrieve_bank_account(self, account_number, partner_id, bic=False):
+        """
+        Search for bank account or create a new one
+        """
+        if not account_number:
+            return None
+
+        account_numbers = [account_number, account_number.replace(" ", "")]
+        partner_bank = self.env["res.partner.bank"]
+
+        domain = [
+            ("acc_number", "in", account_numbers),
+            ("partner_id", "=", partner_id),
+            ("company_id", "=", self.env.company.id),
+        ]
+        bank_account = partner_bank.search(domain, limit=1)
+
+        if not bank_account:
+            account_vals = {
+                "acc_number": account_number,
+                "partner_id": partner_id,
+                "company_id": self.env.company.id,
+                # Automatic journal selection doesn't work
+                "journal_id": False,
+            }
+            if bic:
+                bank_id = self.env["res.bank"].search(
+                    [("bic", "=", bic.upper())], limit=1
+                )
+                if bank_id:
+                    account_vals["bank_id"] = bank_id.id
+
+            bank_account = partner_bank.create(account_vals)
+
+        return bank_account
