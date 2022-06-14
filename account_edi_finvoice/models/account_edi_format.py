@@ -6,9 +6,9 @@ from datetime import datetime
 from lxml import etree
 
 from odoo import _, api, models, tools
-from odoo.tools import float_repr
 from odoo.exceptions import UserError, ValidationError
 from odoo.tests.common import Form
+from odoo.tools import float_repr
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,10 @@ class AccountEdiFormat(models.Model):
 
     def _get_finvoice_values(self, invoice):
         def format_monetary(amount):
-            return float_repr(amount, invoice.currency_id.decimal_places)
+            amount = float_repr(amount, invoice.currency_id.decimal_places)
+            amount = str(amount).replace(".", ",")
+
+            return amount
 
         def format_date(dt=False):
             # Returns unhyphenated ISO-8601 date
@@ -78,13 +81,13 @@ class AccountEdiFormat(models.Model):
             # Allows implementing overdue fine percent
             overdue_fine_percent = invoice.overdue_interest
         else:
-            overdue_fine_percent = ""
+            overdue_fine_percent = False
 
         if hasattr(invoice, "agreement_identifier"):
             # Allows implementing agreement identifier
             agreement_identifier = invoice.agreement_identifier
         else:
-            agreement_identifier = ""
+            agreement_identifier = invoice.ref or invoice.name
 
         return {
             "record": invoice,
@@ -469,7 +472,7 @@ class AccountEdiFormat(models.Model):
             string_number = string_number.replace(",", ".")
 
             # Replace non-numeric
-            string_number = re.sub("[^\d.-]", "", string_number)
+            string_number = re.sub(r"[^\d.-]", "", string_number)
 
             float_number = float(string_number)
 
