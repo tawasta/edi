@@ -215,14 +215,19 @@ class AccountEdiFormat(models.Model):
         t = etree.ElementTree(tree)
         finvoice_schema.assertValid(t)
 
+        invoice_type = self._get_invoice_type(
+            _find_value("./InvoiceDetails/InvoiceTypeCode")
+        )
+        journal_id = invoice.with_context(
+            {"default_move_type": invoice_type}
+        )._get_default_journal()
+
+        invoice = invoice.with_context(
+            default_move_type=invoice_type, default_journal_id=journal_id.id
+        )
+
         with Form(invoice) as invoice_form:
-            """
-            # Setting invoice type doesn't seem to be allowed?
-            invoice_form.move_type = self._get_invoice_type(
-                _find_value("./InvoiceDetails/InvoiceTypeCode")
-            )
-            """
-            self_ctx = self.with_company(invoice.company_id)
+            self_ctx = self.with_company(self.env.company.id)
 
             # region SellerPartyDetails
             spd = "SellerPartyDetails"
@@ -320,12 +325,21 @@ class AccountEdiFormat(models.Model):
 
                     line_form.product_id = product_id
 
+                    if product_id:
+                        accounts = product_id.product_tmpl_id._get_product_accounts()
+
+                        if invoice_type == "in_invoice":
+                            line_form.account_id = accounts["expense"]
+                        elif invoice_type == "out_invoice":
+                            line_form.account_id = accounts["income"]
+                    else:
+                        line_form.account_id = journal_id.default_account_id
+
                     if not article_name and not default_code:
                         # Comment line
                         # TODO: comment lines not working yet
-                        # line_form.display_type = "line_note"
-                        # line_form.account_id = False
-                        pass
+                        line_form.display_type = "line_note"
+                        line_form.account_id = self.env["account.account"]
 
                     quantity = (
                         self._to_float(_find_value("./InvoicedQuantity", line)) or 1
@@ -382,6 +396,7 @@ class AccountEdiFormat(models.Model):
                             ("type_tax_use", "=", invoice_form.journal_id.type),
                             # The subtotal will be saved as untaxed amount
                             ("price_include", "=", False),
+                            ("company_id", "=", self.env.company.id),
                         ]
 
                         tax = self.env["account.tax"].search(
