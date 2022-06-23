@@ -5,9 +5,7 @@
         Finvoice 3.0 XML document
     -->
     <template id="export_finvoice">
-        <Finvoice
-            t-att-Version="3.0"
-        >
+        <Finvoice t-att-Version="3.0">
             <t t-set="company" t-value="record.company_id" />
             <t t-set="partner" t-value="record.partner_id" />
             <t t-set="delivery" t-value="record.partner_id" />
@@ -74,7 +72,9 @@
 
             <!-- region Invoice recipient information -->
             <InvoiceRecipientPartyDetails>
-                <InvoiceRecipientPartyIdentifier t-esc="partner.business_code" />
+                <InvoiceRecipientPartyIdentifier
+                    t-esc="partner.business_code"
+                />
                 <InvoiceRecipientOrganisationName t-esc="partner.name" />
                 <InvoiceRecipientOrganisationTaxCode t-esc="partner.vat" />
                 <InvoiceRecipientPostalAddressDetails>
@@ -148,21 +148,26 @@
                 <SalesPersonName t-esc="record.invoice_user_id.name" />
                 <AgreementIdentifier t-esc="agreement_identifier" />
                 <BuyerReferenceIdentifier t-esc="record.ref or ''" />
-                <ProjectReferenceIdentifier t-esc="''"/>
+                <ProjectReferenceIdentifier t-esc="''" />
                 <InvoiceTotalVatExcludedAmount
                     t-att-AmountCurrencyIdentifier="record.currency_id.name"
-                    t-esc="format_monetary(record.amount_untaxed_signed)" />
+                    t-esc="format_monetary(record.amount_untaxed_signed)"
+                />
                 <InvoiceTotalVatAmount
                     t-att-AmountCurrencyIdentifier="record.currency_id.name"
-                    t-esc="format_monetary(record.amount_tax_signed)" />
+                    t-esc="format_monetary(record.amount_tax_signed)"
+                />
                 <InvoiceTotalVatIncludedAmount
                     t-att-AmountCurrencyIdentifier="record.currency_id.name"
-                    t-esc="format_monetary(record.amount_total_signed)" />
+                    t-esc="format_monetary(record.amount_total_signed)"
+                />
                 <t t-foreach="free_texts" t-as="free_text">
                     <InvoiceFreeText t-esc="free_text" />
                 </t>
                 <PaymentTermsDetails>
-                    <PaymentTermsFreeText t-esc="record.invoice_payment_term_id.name"/>
+                    <PaymentTermsFreeText
+                        t-esc="record.invoice_payment_term_id.name"
+                    />
                     <InvoiceDueDate
                         Format="CCYYMMDD"
                         t-esc="format_date(record.invoice_date_due)"
@@ -202,7 +207,9 @@
                 <RowFreeText t-esc="line.name" />
 
                 <RowPositionIdentifier t-esc="line.id" />
-                <RowVatRatePercent t-esc="format_monetary(sum(line.tax_ids.mapped('amount')))" />
+                <RowVatRatePercent
+                    t-esc="format_monetary(sum(line.tax_ids.mapped('amount')))"
+                />
                 <RowVatAmount
                     t-att-AmountCurrencyIdentifier="line.currency_id.name"
                     t-esc="format_monetary(line.price_total-line.price_subtotal)"
@@ -242,7 +249,8 @@
                 </EpiPartyDetails>
                 <EpiPaymentInstructionDetails>
                     <EpiPaymentInstructionId t-esc="record.payment_reference" />
-                    <EpiRemittanceInfoIdentifier IdentificationSchemeName="SPY"
+                    <EpiRemittanceInfoIdentifier
+                        IdentificationSchemeName="SPY"
                         t-esc="record.payment_reference"
                     />
                     <EpiInstructedAmount

@@ -385,7 +385,8 @@ class AccountEdiFormat(models.Model):
                     line_form.name = line_name
 
                     # Taxes
-                    # We are not using _retrieve_tax() as it might return a tax with prices included
+                    # We are not using _retrieve_tax()
+                    # as it might return a tax with prices included
                     line_form.tax_ids.clear()
                     tax_amount = self._to_float(
                         _find_value("./RowVatRatePercent", line)
@@ -462,7 +463,7 @@ class AccountEdiFormat(models.Model):
             # INV02 Refund (Hyvityslasku)
             inv_type = "in_refund"
         else:
-            raise UserError(_(f"This Finvoice XML file is not an invoice/refund file"))
+            raise UserError(_("This Finvoice XML file is not an invoice/refund file"))
 
         return inv_type
 
