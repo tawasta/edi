@@ -151,18 +151,21 @@ class AccountEdiFormat(models.Model):
         return finvoice_schema
 
     @api.model
-    def _finvoice_check_xml_schema(self, xml_string, version="3.0"):
+    def _finvoice_check_xml_schema(self, xml, version="3.0"):
         """Validate the XML file against the XSD"""
         finvoice_schema = self._finvoice_get_xml_schema(version)
 
-        try:
-            t = etree.ElementTree(etree.fromstring(xml_string))
-            finvoice_schema.assertValid(t)
-        except Exception as e:
-            # if the validation of the XSD fails, we arrive here
+        if isinstance(xml, str):
+            t = etree.ElementTree(etree.fromstring(xml))
+        else:
+            t = xml
 
+        try:
+            finvoice_schema.assertValid(t)
+        except etree.DocumentInvalid as e:
+            # if the validation of the XSD fails, we arrive here
             _logger.warning("The XML file is invalid against the XML Schema Definition")
-            _logger.warning(xml_string)
+            _logger.warning(xml)
             _logger.warning(e)
 
             msg = _(
@@ -207,13 +210,10 @@ class AccountEdiFormat(models.Model):
         def _find_value(xpath, element=tree):
             return self._find_value(xpath, element, element.nsmap)
 
-        version = "3.0"
         ns = tree.nsmap
 
         # Check XML schema to avoid headaches trying to import invalid files
-        finvoice_schema = self._finvoice_get_xml_schema(version)
-        t = etree.ElementTree(tree)
-        finvoice_schema.assertValid(t)
+        self._finvoice_check_xml_schema(tree)
 
         invoice_type = self._get_invoice_type(
             _find_value("./InvoiceDetails/InvoiceTypeCode")
@@ -349,12 +349,15 @@ class AccountEdiFormat(models.Model):
                     unit_code = self._find_attribute(
                         "./InvoicedQuantity", line, "QuantityUnitCode"
                     )
-                    uom = self.env["uom.uom"].search(
-                        [("name", "ilike", unit_code)], limit=1
-                    )
-                    if uom:
+                    if product_id:
+                        uom = self.env["uom.uom"].search(
+                            [("name", "ilike", unit_code)], limit=1
+                        )
+                        # TODO: an option to auto-create a missing UOM
+                        if not uom:
+                            uom = self.env.ref("uom.product_uom_unit")
+
                         line_form.product_uom_id = uom
-                    # TODO: an option to auto-create a missing UOM
 
                     # Construct a unit price
 
@@ -439,7 +442,8 @@ class AccountEdiFormat(models.Model):
                 bic=_find_value(f"./{ede}/{epd}/EpiBfiPartyDetails/EpiBfiIdentifier"),
             )
 
-            invoice_form.partner_bank_id = partner_bank_id
+            if partner_bank_id:
+                invoice_form.partner_bank_id = partner_bank_id
             # endregion
 
             invoice = invoice_form.save()
