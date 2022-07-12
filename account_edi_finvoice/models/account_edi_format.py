@@ -105,13 +105,15 @@ class AccountEdiFormat(models.Model):
     def _export_finvoice(self, invoice):
         self.ensure_one()
 
-        xml_string = b"<?xml version='1.0' encoding='UTF-8'?>"
-        xml_string += self.env["ir.qweb"]._render(
+        xml_string = self.env["ir.qweb"]._render(
             "account_edi_finvoice.export_finvoice", self._get_finvoice_values(invoice)
         )
 
         # Validate the content. This will NOT raise an error for user
         self._finvoice_check_xml_schema(xml_string)
+
+        # Add file encoding (schema validation doesn't want this)
+        xml_string = b"<?xml version='1.0' encoding='UTF-8'?>" + xml_string
 
         xml_name = "%s_finvoice_3_0.xml" % (invoice.name.replace("/", "_"))
         return self.env["ir.attachment"].create(
@@ -157,6 +159,8 @@ class AccountEdiFormat(models.Model):
 
         if isinstance(xml, str):
             t = etree.ElementTree(etree.fromstring(xml))
+        elif isinstance(xml, bytes):
+            t = etree.ElementTree(etree.fromstring(xml.decode("UTF-8")))
         else:
             t = xml
 
