@@ -243,7 +243,11 @@ class AccountEdiFormat(models.Model):
             business_code_regex = "^[0-9]{7}[-][0-9]$"
 
             # Can't find a VAT, use business id instead
-            if not vat and re.search(business_code_regex, business_code):
+            if (
+                not vat
+                and business_code
+                and re.search(business_code_regex, business_code)
+            ):
                 # TODO: this is pretty unreliable
                 vat = "FI%s" % re.sub("[^0-9]", "", business_code)
             elif vat and re.search(business_code_regex, vat):
