@@ -287,7 +287,9 @@ class AccountEdiFormat(models.Model):
 
             # region InvoiceDetails
             ind = "InvoiceDetails"
-            invoice_form.ref = _find_value(f"./{ind}/InvoiceNumber")
+            invoice_form.ref = _find_value(
+                f"./{ind}/SellerReferenceIdentifier"
+            ) or _find_value(f"./{ind}/InvoiceNumber")
 
             invoice_date = _find_value(f"./{ind}/InvoiceDate")
             invoice_form.invoice_date = datetime.strptime(invoice_date, "%Y%m%d")
