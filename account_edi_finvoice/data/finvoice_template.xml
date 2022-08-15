@@ -40,8 +40,8 @@
                 <SellerOrganisationTaxCode t-esc="company.vat" />
 
                 <SellerPostalAddressDetails>
-                    <SellerStreetName t-esc="company.street" />
-                    <SellerStreetName t-esc="company.street2" />
+                    <SellerStreetName t-if="company.street" t-esc="company.street" />
+                    <SellerStreetName t-if="company.street2" t-esc="company.street2" />
                     <SellerTownName t-esc="company.city" />
                     <SellerPostCodeIdentifier t-esc="company.zip" />
                     <CountryCode t-esc="company.country_id.code" />
