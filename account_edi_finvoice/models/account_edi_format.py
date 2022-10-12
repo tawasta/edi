@@ -206,6 +206,7 @@ class AccountEdiFormat(models.Model):
         elements = element.xpath(xpath, namespaces=element.nsmap)
         return join_character.join(x.text for x in elements)
 
+    # flake8: noqa: C901
     def _import_finvoice(self, tree, invoice):
         """
         Import finvoice document as Odoo invoice
