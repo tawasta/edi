@@ -40,8 +40,14 @@
                 <SellerOrganisationTaxCode t-esc="company.vat" />
 
                 <SellerPostalAddressDetails>
-                    <SellerStreetName t-if="company.street" t-esc="company.street" />
-                    <SellerStreetName t-if="company.street2" t-esc="company.street2" />
+                    <SellerStreetName
+                        t-if="company.street"
+                        t-esc="company.street"
+                    />
+                    <SellerStreetName
+                        t-if="company.street2"
+                        t-esc="company.street2"
+                    />
                     <SellerTownName t-esc="company.city" />
                     <SellerPostCodeIdentifier t-esc="company.zip" />
                     <CountryCode t-esc="company.country_id.code" />
@@ -243,7 +249,7 @@
                         <EpiBei t-esc="company.company_registry" />
                         <EpiAccountID
                             IdentificationSchemeName="IBAN"
-                            t-esc="record.partner_bank_id.sanitized_acc_number"
+                            t-esc="record.partner_bank_id.sanitized_acc_number or company.bank_ids[0].sanitized_acc_number"
                         />
                     </EpiBeneficiaryPartyDetails>
                 </EpiPartyDetails>
