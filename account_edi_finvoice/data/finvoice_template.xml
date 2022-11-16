@@ -81,7 +81,7 @@
                 <InvoiceRecipientPartyIdentifier
                     t-esc="partner.business_code"
                 />
-                <InvoiceRecipientOrganisationName t-esc="partner.name" />
+                <InvoiceRecipientOrganisationName t-esc="partner.name[0:35]" />
                 <InvoiceRecipientOrganisationTaxCode t-esc="partner.vat" />
                 <InvoiceRecipientPostalAddressDetails>
                     <InvoiceRecipientStreetName t-esc="partner.street" />
@@ -120,7 +120,7 @@
             <!-- region Delivery information -->
             <DeliveryPartyDetails>
                 <DeliveryPartyIdentifier t-esc="delivery.business_code" />
-                <DeliveryOrganisationName t-esc="delivery.name" />
+                <DeliveryOrganisationName t-esc="delivery.name[0:35]" />
                 <DeliveryOrganisationTaxCode t-esc="delivery.vat" />
 
                 <DeliveryPostalAddressDetails>
@@ -209,10 +209,10 @@
                     t-esc="format_monetary(line.price_unit)"
                 />
                 <RowIdentifier t-esc="line.id" />
+                <RowPositionIdentifier t-esc="line.id" />
 
                 <RowFreeText t-esc="line.name" />
 
-                <RowPositionIdentifier t-esc="line.id" />
                 <RowVatRatePercent
                     t-esc="format_monetary(sum(line.tax_ids.mapped('amount')))"
                 />
