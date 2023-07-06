@@ -185,9 +185,15 @@ class AccountEdiFormat(models.Model):
 
     def _create_invoice_from_xml_tree(self, filename, tree, journal=None):
         self.ensure_one()
+        ctx = self._context
+        if ctx.get("allowed_company_ids"):
+            company_id = ctx.get("allowed_company_ids")[0]
+
         if self._is_finvoice(filename, tree):
-            return self._import_finvoice(tree, self.env["account.move"])
-        return super()._create_invoice_from_xml_tree(filename, tree)
+            return self._import_finvoice(
+                tree, self.env["account.move"], company_id=company_id
+            )
+        return super()._create_invoice_from_xml_tree(filename, tree, journal)
 
     def _update_invoice_from_xml_tree(self, filename, tree, invoice):
         self.ensure_one()
@@ -207,7 +213,7 @@ class AccountEdiFormat(models.Model):
         return join_character.join(x.text for x in elements)
 
     # flake8: noqa: C901
-    def _import_finvoice(self, tree, invoice):
+    def _import_finvoice(self, tree, invoice, company_id=False):
         """
         Import finvoice document as Odoo invoice
         """
@@ -223,6 +229,10 @@ class AccountEdiFormat(models.Model):
         invoice_type = self._get_invoice_type(
             _find_value("./InvoiceDetails/InvoiceTypeCode")
         )
+        if not company_id:
+            company_id = self.env.company.id
+        invoice = invoice.with_company(company_id)
+
         journal_id = invoice.with_context(
             {"default_move_type": invoice_type}
         )._get_default_journal()
@@ -232,7 +242,7 @@ class AccountEdiFormat(models.Model):
         )
 
         with Form(invoice) as invoice_form:
-            self_ctx = self.with_company(self.env.company.id)
+            self_ctx = self.with_company(company_id)
 
             # region SellerPartyDetails
             spd = "SellerPartyDetails"
@@ -411,7 +421,7 @@ class AccountEdiFormat(models.Model):
                             ("type_tax_use", "=", invoice_form.journal_id.type),
                             # The subtotal will be saved as untaxed amount
                             ("price_include", "=", False),
-                            ("company_id", "=", self.env.company.id),
+                            ("company_id", "=", company_id),
                         ]
 
                         tax = self.env["account.tax"].search(
@@ -451,6 +461,7 @@ class AccountEdiFormat(models.Model):
                 _find_value(f"./{ede}/{epd}/EpiBeneficiaryPartyDetails/EpiAccountID"),
                 partner_id=partner_id.id,
                 bic=_find_value(f"./{ede}/{epd}/EpiBfiPartyDetails/EpiBfiIdentifier"),
+                company_id=company_id,
             )
 
             if partner_bank_id:
@@ -509,12 +520,17 @@ class AccountEdiFormat(models.Model):
 
         return float_number
 
-    def _retrieve_bank_account(self, account_number, partner_id, bic=False):
+    def _retrieve_bank_account(
+        self, account_number, partner_id, bic=False, company_id=False
+    ):
         """
         Search for bank account or create a new one
         """
         if not account_number:
             return None
+
+        if not company_id:
+            company_id = self.env.company.id
 
         account_numbers = [account_number, account_number.replace(" ", "")]
         partner_bank = self.env["res.partner.bank"]
@@ -522,7 +538,7 @@ class AccountEdiFormat(models.Model):
         domain = [
             ("acc_number", "in", account_numbers),
             ("partner_id", "=", partner_id),
-            ("company_id", "=", self.env.company.id),
+            ("company_id", "=", company_id),
         ]
         bank_account = partner_bank.search(domain, limit=1)
 
@@ -530,7 +546,7 @@ class AccountEdiFormat(models.Model):
             account_vals = {
                 "acc_number": account_number,
                 "partner_id": partner_id,
-                "company_id": self.env.company.id,
+                "company_id": company_id,
                 # Automatic journal selection doesn't work
                 "journal_id": False,
             }
