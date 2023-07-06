@@ -183,7 +183,7 @@ class AccountEdiFormat(models.Model):
             _logger.error(msg)
         return True
 
-    def _create_invoice_from_xml_tree(self, filename, tree):
+    def _create_invoice_from_xml_tree(self, filename, tree, journal=None):
         self.ensure_one()
         if self._is_finvoice(filename, tree):
             return self._import_finvoice(tree, self.env["account.move"])
