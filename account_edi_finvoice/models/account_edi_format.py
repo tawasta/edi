@@ -186,6 +186,7 @@ class AccountEdiFormat(models.Model):
     def _create_invoice_from_xml_tree(self, filename, tree, journal=None):
         self.ensure_one()
         ctx = self._context
+        company_id = False
         if ctx.get("allowed_company_ids"):
             company_id = ctx.get("allowed_company_ids")[0]
 
