@@ -386,11 +386,15 @@ class AccountEdiFormat(models.Model):
                     # Try to find UnitPriceAmount
                     price_unit = _find_value("./UnitPriceAmount", line)
 
-                    if not price_unit:
+                    if not price_unit or self._to_float(price_unit) == 0:
                         # Didn't find UnitPriceAmount. Try RowVatExcludedAmount
                         price_subtotal = _find_value("./RowVatExcludedAmount", line)
-                        if price_subtotal:
-                            price_unit = self._to_float(price_subtotal) / quantity
+                        price_subtotal = self._to_float(price_subtotal)
+                        if price_subtotal and price_subtotal > 0:
+                            price_unit = price_subtotal / quantity
+
+                    if not price_unit:
+                        price_unit = 0
 
                     line_form.price_unit = self._to_float(price_unit)
 
