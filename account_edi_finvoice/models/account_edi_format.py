@@ -120,8 +120,6 @@ class AccountEdiFormat(models.Model):
             {
                 "name": xml_name,
                 "raw": xml_string,
-                "res_model": "account.move",
-                "res_id": invoice.id,
                 "mimetype": "application/xml",
             }
         )
