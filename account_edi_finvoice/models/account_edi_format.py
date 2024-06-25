@@ -540,7 +540,10 @@ class AccountEdiFormat(models.Model):
 
         domain = [
             ("acc_number", "in", account_numbers),
-            ("partner_id", "=", partner_id),
+            # In some cases (e.g. business groups, organizations) the partner is not the owner
+            # of the bank account. This would cause an error, as we try to create an overlapping
+            # bank account number
+            # ("partner_id", "=", partner_id),
             ("company_id", "=", company_id),
         ]
         bank_account = partner_bank.search(domain, limit=1)
