@@ -10,6 +10,6 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
-[account_edi_finvoice](account_edi_finvoice/) | 14.0.1.0.8 |  | Import/Export Finvoice 3.0 invoices
+[account_edi_finvoice](account_edi_finvoice/) | 14.0.1.0.9 |  | Import/Export Finvoice 3.0 invoices
 
 [//]: # (end addons)
