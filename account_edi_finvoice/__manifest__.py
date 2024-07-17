@@ -21,7 +21,7 @@
 {
     "name": "Import/Export invoices as Finvoice",
     "summary": "Import/Export Finvoice 3.0 invoices",
-    "version": "14.0.1.0.8",
+    "version": "14.0.1.0.9",
     "category": "Accounting",
     "website": "https://gitlab.com/tawasta/odoo/edi",
     "author": "Tawasta",
