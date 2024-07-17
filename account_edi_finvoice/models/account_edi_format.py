@@ -349,20 +349,21 @@ class AccountEdiFormat(models.Model):
                     # Didn't find UnitPriceAmount. Try RowVatExcludedAmount
                     price_subtotal = _find_value("./RowVatExcludedAmount", line)
                     price_subtotal = self._to_float(price_subtotal)
-                    if price_subtotal and price_subtotal > 0:
+                    if price_subtotal:
                         price_unit = price_subtotal / quantity
 
                 if not price_unit:
                     price_unit = 0
+
+                if article_name:
+                    _logger.debug("Importing '{}'".format(article_name))
+                _logger.debug(price_unit)
 
                 if line_count > 200 and not price_unit:
                     # If invoice has more than 200 lines, skip zero lines to prevent a timeout
                     # This can be disabled (or limit raised) after line import is optimized
                     _logger.debug("Skipping a zero due to a long invoice")
                     continue
-
-                if article_name:
-                    _logger.debug("Importing '{}'".format(article_name))
 
                 with invoice_form.invoice_line_ids.new() as line_form:
                     # Try to find a product by default code, name or barcode
