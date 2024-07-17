@@ -325,17 +325,47 @@ class AccountEdiFormat(models.Model):
 
             # region InvoiceRows
             lines = tree.xpath("./InvoiceRow", namespaces=ns)
+            line_number = 0
+            line_count = len(lines)
+
             for line in lines:
+                line_number += 1
+                _logger.debug("Importing line {}/{}".format(line_number, line_count))
+
+                if _find_value("./BuyerArticleIdentifier", line):
+                    default_code = _find_value("./BuyerArticleIdentifier", line)
+                else:
+                    default_code = _find_value("./ArticleIdentifier", line)
+                article_name = _find_value("./ArticleName", line)
+                article_description = _find_value("./ArticleDescription", line)
+                ean_code = _find_value("./EanCode", line)
+
+                # Construct a unit price
+                quantity = self._to_float(_find_value("./InvoicedQuantity", line)) or 1
+                # Try to find UnitPriceAmount
+                price_unit = _find_value("./UnitPriceAmount", line)
+
+                if not price_unit or self._to_float(price_unit) == 0:
+                    # Didn't find UnitPriceAmount. Try RowVatExcludedAmount
+                    price_subtotal = _find_value("./RowVatExcludedAmount", line)
+                    price_subtotal = self._to_float(price_subtotal)
+                    if price_subtotal and price_subtotal > 0:
+                        price_unit = price_subtotal / quantity
+
+                if not price_unit:
+                    price_unit = 0
+
+                if line_count > 200 and not price_unit:
+                    # If invoice has more than 200 lines, skip zero lines to prevent a timeout
+                    # This can be disabled (or limit raised) after line import is optimized
+                    _logger.debug("Skipping a zero due to a long invoice")
+                    continue
+
+                if article_name:
+                    _logger.debug("Importing '{}'".format(article_name))
+
                 with invoice_form.invoice_line_ids.new() as line_form:
                     # Try to find a product by default code, name or barcode
-                    if _find_value("./BuyerArticleIdentifier", line):
-                        default_code = _find_value("./BuyerArticleIdentifier", line)
-                    else:
-                        default_code = _find_value("./ArticleIdentifier", line)
-                    article_name = _find_value("./ArticleName", line)
-                    article_description = _find_value("./ArticleDescription", line)
-                    ean_code = _find_value("./EanCode", line)
-
                     product_id = self_ctx._retrieve_product(
                         default_code=default_code,
                         name=article_name,
@@ -355,15 +385,23 @@ class AccountEdiFormat(models.Model):
                     else:
                         line_form.account_id = journal_id.default_account_id
 
+                    # Construct a line name, if product is not found
+                    line_name = ""
+                    if not product_id:
+                        if article_name:
+                            line_name += f"{article_name}"
+                        if article_description:
+                            line_name += f"{article_description}"
+
+                    line_name += self._find_values_joined("./RowFreeText", line)
+                    line_form.name = line_name
+
                     if not article_name and not default_code:
                         # Comment line
                         # TODO: comment lines not working yet
                         line_form.display_type = "line_note"
                         line_form.account_id = self.env["account.account"]
 
-                    quantity = (
-                        self._to_float(_find_value("./InvoicedQuantity", line)) or 1
-                    )
                     line_form.quantity = quantity
 
                     unit_code = self._find_attribute(
@@ -379,37 +417,11 @@ class AccountEdiFormat(models.Model):
 
                         line_form.product_uom_id = uom
 
-                    # Construct a unit price
-
-                    # Try to find UnitPriceAmount
-                    price_unit = _find_value("./UnitPriceAmount", line)
-
-                    if not price_unit or self._to_float(price_unit) == 0:
-                        # Didn't find UnitPriceAmount. Try RowVatExcludedAmount
-                        price_subtotal = _find_value("./RowVatExcludedAmount", line)
-                        price_subtotal = self._to_float(price_subtotal)
-                        if price_subtotal and price_subtotal > 0:
-                            price_unit = price_subtotal / quantity
-
-                    if not price_unit:
-                        price_unit = 0
-
                     line_form.price_unit = self._to_float(price_unit)
 
                     line_form.discount = self._to_float(
                         _find_value("./RowDiscountPercent", line)
                     )
-
-                    # Construct a line name, if product is not found
-                    line_name = ""
-                    if not product_id:
-                        if article_name:
-                            line_name += f"{article_name}"
-                        if article_description:
-                            line_name += f"{article_description}"
-
-                    line_name += self._find_values_joined("./RowFreeText", line)
-                    line_form.name = line_name
 
                     # Taxes
                     # We are not using _retrieve_tax()
