@@ -376,15 +376,33 @@ class AccountEdiFormat(models.Model):
 
                     line_form.product_id = product_id
 
-                    if product_id:
-                        accounts = product_id.product_tmpl_id._get_product_accounts()
+                    account_id = False
 
+                    if product_id:
+                        # Get account from product
+                        accounts = product_id.product_tmpl_id._get_product_accounts()
                         if invoice_type == "in_invoice":
-                            line_form.account_id = accounts["expense"]
+                            account_id = accounts["expense"]
                         elif invoice_type == "out_invoice":
-                            line_form.account_id = accounts["income"]
-                    else:
-                        line_form.account_id = journal_id.default_account_id
+                            account_id = accounts["income"]
+                    elif (
+                        hasattr(partner_id, "property_account_income_id")
+                        and invoice_type == "out_invoice"
+                    ):
+                        # Get partner default income account
+                        account_id = partner_id.property_account_income_id
+                    elif (
+                        hasattr(partner_id, "property_account_expense_id")
+                        and invoice_type == "in_invoice"
+                    ):
+                        # Get partner default expense account
+                        account_id = partner_id.property_account_expense_id
+
+                    if not account_id:
+                        # Use default account for this journal
+                        account_id = journal_id.default_account_id
+
+                    line_form.account_id = account_id
 
                     # Construct a line name, if product is not found
                     line_name = ""
