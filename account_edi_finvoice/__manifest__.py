@@ -29,7 +29,7 @@
     "application": False,
     "installable": True,
     "external_dependencies": {"python": ["lxml", "re", "textwrap"], "bin": []},
-    "depends": ["account_edi", "l10n_fi_edicode"],
+    "depends": ["account", "account_edi", "account_edi_ubl_cii", "l10n_fi_edicode"],
     "data": [
         "data/finvoice_template.xml",
         "data/account_edi_data.xml",
