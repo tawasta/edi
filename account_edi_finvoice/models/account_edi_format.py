@@ -1,7 +1,7 @@
 import logging
 import re
 import textwrap
-from datetime import datetime
+from datetime import datetime, UTC
 
 from lxml import etree
 
@@ -134,7 +134,7 @@ class AccountEdiFormat(models.Model):
             "record": invoice,
             "format_monetary": format_monetary,
             "format_date": format_date,
-            "message_timestamp": datetime.now(datetime.UTC).strftime(
+            "message_timestamp": datetime.now(UTC).strftime(
                 "%Y-%m-%dT%H:%M:%S+00:00"
             ),
             "type_code": type_code,
