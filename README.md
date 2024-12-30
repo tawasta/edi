@@ -5,4 +5,11 @@ Electronic Data Interchange
 ===========================
 
 [//]: # (addons)
+
+Available addons
+----------------
+addon | version | maintainers | summary
+--- | --- | --- | ---
+[account_edi_finvoice](account_edi_finvoice/) | 17.0.1.0.0 |  | Import/Export Finvoice 3.0 invoices
+
 [//]: # (end addons)
