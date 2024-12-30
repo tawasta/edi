@@ -28,7 +28,7 @@
     "license": "LGPL-3",
     "application": False,
     "installable": True,
-    "external_dependencies": {"python": ["lxml", "textwrap"], "bin": []},
+    "external_dependencies": {"python": [], "bin": []},
     "depends": ["account", "account_edi", "account_edi_ubl_cii", "l10n_fi_edicode"],
     "data": [
         "data/finvoice_template.xml",
