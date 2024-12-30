@@ -1,7 +1,7 @@
 ##############################################################################
 #
-#    Author: Oy Tawasta OS Technologies Ltd.
-#    Copyright 2022 Oy Tawasta OS Technologies Ltd. (https://tawasta.fi)
+#    Author: Futural Oy
+#    Copyright 2022 Futural Oy (https://futural.fi)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as
@@ -24,7 +24,7 @@
     "version": "17.0.1.0.0",
     "category": "Accounting",
     "website": "https://gitlab.com/tawasta/odoo/edi",
-    "author": "Tawasta",
+    "author": "Futural",
     "license": "LGPL-3",
     "application": False,
     "installable": True,
