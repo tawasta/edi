@@ -232,7 +232,6 @@ class AccountMove(models.Model):
 
                 line_values["tax_ids"] = tax
 
-            print(line_values)
             invoice.invoice_line_ids.create(line_values)
 
             # TODO: handle SubInvoiceRows
