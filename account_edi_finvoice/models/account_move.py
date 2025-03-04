@@ -168,9 +168,9 @@ class AccountMove(models.Model):
                 accounts = product_id.product_tmpl_id._get_product_accounts()
 
                 if invoice_type == "in_invoice":
-                    line_values["account_id"] = accounts["expense"]
+                    line_values["account_id"] = accounts["expense"].id
                 elif invoice_type == "out_invoice":
-                    line_values["account_id"] = accounts["income"]
+                    line_values["account_id"] = accounts["income"].id
 
             # Construct a line name, if product is not found
             line_name = ""
