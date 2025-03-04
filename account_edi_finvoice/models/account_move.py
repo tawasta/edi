@@ -162,7 +162,8 @@ class AccountMove(models.Model):
             )
             # TODO: An option to auto-create products
 
-            line_values["product_id"] = product_id
+            if product_id:
+                line_values["product_id"] = product_id.id
 
             if product_id:
                 accounts = product_id.product_tmpl_id._get_product_accounts()
