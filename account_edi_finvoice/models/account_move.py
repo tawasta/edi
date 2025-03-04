@@ -203,7 +203,7 @@ class AccountMove(models.Model):
                 if not uom:
                     uom = self.env.ref("uom.product_uom_unit")
 
-                line_values["product_uom_id"] = uom
+                line_values["product_uom_id"] = uom.id
 
             line_values["price_unit"] = edi_format._to_float(price_unit)
 
