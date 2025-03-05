@@ -41,8 +41,12 @@ class AccountMove(models.Model):
         invoice_type = edi_format._get_invoice_type(
             _find_value("./InvoiceDetails/InvoiceTypeCode")
         )
-        if not company_id:
+        if invoice.company_id:
+            # Force invoice company
+            company_id = invoice.company_id.id
+        elif not company_id:
             company_id = self.env.company.id
+
         invoice = invoice.with_company(company_id).with_context(
             default_move_type=invoice_type
         )
