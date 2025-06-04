@@ -51,6 +51,9 @@ class AccountEdiFormat(models.Model):
         }
 
     def _post_invoice_edi_finvoice(self, invoice):
+        if not invoice.transmit_method_id:
+            return {}
+
         if self.code != "finvoice_3_0":
             return super()._post_invoice_edi(invoice)
 

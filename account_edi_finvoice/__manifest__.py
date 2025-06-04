@@ -21,13 +21,13 @@
 {
     "name": "Import/Export invoices as Finvoice",
     "summary": "Import/Export Finvoice 3.0 invoices",
-    "version": "18.0.1.0.3",
+    "version": "18.0.1.0.1",
     "category": "Accounting",
     "website": "https://gitlab.com/tawasta/odoo/edi",
     "author": "Futural",
     "license": "LGPL-3",
     "application": False,
-    "installable": False,
+    "installable": True,
     "external_dependencies": {"python": [], "bin": []},
     "depends": ["account", "account_edi", "account_edi_ubl_cii", "l10n_fi_edicode"],
     "data": [

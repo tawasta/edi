@@ -47,10 +47,6 @@ class AccountMove(models.Model):
         elif not company_id:
             company_id = self.env.company.id
 
-        invoice = invoice.with_company(company_id).with_context(
-            default_move_type=invoice_type
-        )
-
         # region SellerPartyDetails
         spd = "SellerPartyDetails"
 
@@ -70,22 +66,23 @@ class AccountMove(models.Model):
 
         spad = "SellerPostalAddressDetails"
 
-        edi_common._import_retrieve_and_fill_partner(
-            invoice,
-            name=_find_value(f"./{spd}/SellerOrganisationName"),
-            phone=_find_value(f"./{spd}/SellerPhoneNumberIdentifier"),
-            mail=_find_value(f"./{spd}/SellerEmailaddressIdentifier"),
-            vat=vat,
-        )
+        if not invoice.partner_id:
+            partner, _ = edi_common._import_partner(
+                invoice.company_id,
+                name=_find_value(f"./{spd}/SellerOrganisationName"),
+                phone=_find_value(f"./{spd}/SellerPhoneNumberIdentifier"),
+                email=_find_value(f"./{spd}/SellerEmailaddressIdentifier"),
+                vat=vat,
+            )
+            invoice.partner_id = partner
 
-        partner_vals = {
+        invoice.partner_id.write({
             "company_registry": business_code,
             "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
             "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
             "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
-        }
+        })
 
-        invoice.partner_id.write(partner_vals)
         # endregion
 
         # region InvoiceDetails
@@ -128,8 +125,14 @@ class AccountMove(models.Model):
                 default_code = _find_value("./BuyerArticleIdentifier", line)
             else:
                 default_code = _find_value("./ArticleIdentifier", line)
+
             article_name = _find_value("./ArticleName", line)
             article_description = _find_value("./ArticleDescription", line)
+            article_free_text = edi_format._find_values_joined("./RowFreeText", line)
+
+            if not article_name:
+                article_name = article_description or article_free_text
+
             ean_code = _find_value("./EanCode", line)
 
             # Construct a unit price
@@ -158,34 +161,41 @@ class AccountMove(models.Model):
                 _logger.debug("Skipping a zero line due to a long invoice")
                 continue
 
-            # Try to find a product by default code, name or barcode
-            product_id = self.env["product.product"]._retrieve_product(
-                default_code=default_code,
-                name=article_name,
-                barcode=ean_code,
-            )
-            # TODO: An option to auto-create products
+            product_id = False
+            line_name = ""
 
-            if product_id:
-                line_values["product_id"] = product_id.id
-
-            if product_id:
-                accounts = product_id.product_tmpl_id._get_product_accounts()
-
-                if invoice_type == "in_invoice":
-                    line_values["account_id"] = accounts["expense"].id
-                elif invoice_type == "out_invoice":
-                    line_values["account_id"] = accounts["income"].id
+            # if default_code or ean_code or article_name:
+            #     product_id = self.env["product.product"]._retrieve_product(
+            #         default_code=default_code,
+            #         name=article_name,
+            #         barcode=ean_code,
+            #     )
+            # else:
+            #     product_id = self.env["product.product"]
+            # # TODO: An option to auto-create products
+            #
+            # if product_id:
+            #     line_values["product_id"] = product_id.id
+            #
+            # if product_id:
+            #     accounts = product_id.product_tmpl_id._get_product_accounts()
+            #
+            #     if invoice_type == "in_invoice":
+            #         line_values["account_id"] = accounts["expense"].id
+            #     elif invoice_type == "out_invoice":
+            #         line_values["account_id"] = accounts["income"].id
 
             # Construct a line name, if product is not found
-            line_name = ""
+
             if not product_id:
                 if article_name:
                     line_name += f"{article_name}"
                 if article_description:
                     line_name += f"\n{article_description}"
 
-            line_name += "\n" + edi_format._find_values_joined("./RowFreeText", line)
+            if article_name != article_free_text:
+                line_name += "\n" + article_free_text
+
             line_values["name"] = line_name
 
             if not article_name and not default_code:
@@ -199,7 +209,7 @@ class AccountMove(models.Model):
             unit_code = edi_format._find_attribute(
                 "./InvoicedQuantity", line, "QuantityUnitCode"
             )
-            if product_id:
+            if product_id and unit_code:
                 uom = self.env["uom.uom"].search(
                     [("name", "ilike", unit_code)], limit=1
                 )
@@ -271,5 +281,8 @@ class AccountMove(models.Model):
         if partner_bank_id:
             invoice.partner_bank_id = partner_bank_id
         # endregion
+
+        if invoice.move_type == 'in_invoice' and invoice_type == 'in_refund':
+            invoice.action_switch_move_type()
 
         return invoice
