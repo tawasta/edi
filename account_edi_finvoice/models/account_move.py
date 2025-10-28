@@ -76,12 +76,14 @@ class AccountMove(models.Model):
             )
             invoice.partner_id = partner
 
-        invoice.partner_id.write({
-            "company_registry": business_code,
-            "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
-            "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
-            "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
-        })
+        invoice.partner_id.write(
+            {
+                "company_registry": business_code,
+                "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
+                "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
+                "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
+            }
+        )
 
         # endregion
 
@@ -133,7 +135,7 @@ class AccountMove(models.Model):
             if not article_name:
                 article_name = article_description or article_free_text
 
-            ean_code = _find_value("./EanCode", line)
+            # ean_code = _find_value("./EanCode", line)
 
             # Construct a unit price
             quantity = (
@@ -282,7 +284,7 @@ class AccountMove(models.Model):
             invoice.partner_bank_id = partner_bank_id
         # endregion
 
-        if invoice.move_type == 'in_invoice' and invoice_type == 'in_refund':
+        if invoice.move_type == "in_invoice" and invoice_type == "in_refund":
             invoice.action_switch_move_type()
 
         return invoice
