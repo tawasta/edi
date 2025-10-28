@@ -199,6 +199,8 @@
 
                 <RowFreeText t-esc="line.name" />
 
+                <RowDiscountPercent t-if="line.discount" t-esc="line.discount" />
+
                 <RowVatRatePercent
                     t-esc="format_monetary(sum(line.tax_ids.mapped('amount')))"
                 />
