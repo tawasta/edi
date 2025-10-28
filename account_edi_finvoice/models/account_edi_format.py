@@ -8,6 +8,7 @@ from lxml import etree
 from odoo import _, api, models, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import float_repr
+from odoo.tools import html2plaintext
 
 _logger = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ class AccountEdiFormat(models.Model):
 
         # Each instance of InvoiceFreeText can be 512 characters
         if invoice.narration:
-            free_texts = textwrap.wrap(invoice.narration, 512)
+            free_texts = textwrap.wrap(html2plaintext(invoice.narration), 512)
         else:
             free_texts = []
 
