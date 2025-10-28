@@ -66,16 +66,6 @@ class AccountMove(models.Model):
 
         spad = "SellerPostalAddressDetails"
 
-        if not invoice.partner_id:
-            partner, _ = edi_common._import_partner(
-                invoice.company_id,
-                name=_find_value(f"./{spd}/SellerOrganisationName"),
-                phone=_find_value(f"./{spd}/SellerPhoneNumberIdentifier"),
-                email=_find_value(f"./{spd}/SellerEmailaddressIdentifier"),
-                vat=vat,
-            )
-            invoice.partner_id = partner
-
         invoice.partner_id.write(
             {
                 "company_registry": business_code,
