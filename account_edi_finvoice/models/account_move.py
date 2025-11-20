@@ -235,9 +235,9 @@ class AccountMove(models.Model):
                 if not tax:
                     raise ValidationError(_(f"Could not find a tax for {tax_amount}"))
 
-                line_values["tax_ids"] = tax
+                line_values["tax_ids"] = [(6, 0, tax.ids)]
 
-            invoice.invoice_line_ids.create(line_values)
+            self.env["account.move.line"].create(line_values)
 
             # TODO: handle SubInvoiceRows
 
