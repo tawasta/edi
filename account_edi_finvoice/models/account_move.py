@@ -2,8 +2,8 @@ import logging
 import re
 from datetime import datetime
 
-from odoo import _, api, models, tools
-from odoo.exceptions import UserError, ValidationError
+from odoo import _, models
+from odoo.exceptions import ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -121,7 +121,7 @@ class AccountMove(models.Model):
 
         for line in lines:
             line_number += 1
-            _logger.debug("Importing line {}/{}".format(line_number, line_count))
+            _logger.debug(f"Importing line {line_number}/{line_count}")
             line_values = {"move_id": invoice.id}
 
             if _find_value("./BuyerArticleIdentifier", line):
@@ -150,10 +150,11 @@ class AccountMove(models.Model):
                 price_unit = 0
 
             if article_name:
-                _logger.debug("Importing '{}'".format(article_name))
+                _logger.debug(f"Importing '{article_name}'")
 
             if line_count > 200 and not price_unit:
-                # If invoice has more than 200 lines, skip zero lines to prevent a timeout
+                # If invoice has more than 200 lines,
+                # skip zero lines to prevent a timeout
                 # This can be disabled (or limit raised) after line import is optimized
                 _logger.debug("Skipping a zero line due to a long invoice")
                 continue

@@ -6,7 +6,7 @@ from datetime import datetime
 from lxml import etree
 
 from odoo import _, api, models, tools
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import UserError
 from odoo.tools import float_repr
 
 _logger = logging.getLogger(__name__)
@@ -197,7 +197,7 @@ class AccountEdiFormat(models.Model):
                 "XML Schema Definition. The XML file and the "
                 "full error have been written in the server logs. "
                 "Here is the error, which may give you an idea on the "
-                "cause of the problem : {}.".format(e)
+                f"cause of the problem : {e}."
             )
 
             _logger.error(msg)
@@ -267,8 +267,9 @@ class AccountEdiFormat(models.Model):
             if "." in string_number and "," in string_number:
                 # TODO: Add support for comma as thousands separator (1,000.00)
                 msg = _(
-                    f"Using comma as thousands separator not supported! ({string_number})"
-                )
+                    "Using comma as thousands separator not supported! "
+                    "(%(string_number)s)"
+                ) % {"string_number": string_number}
                 raise UserError(msg)
 
             # Replace comma with period
@@ -298,9 +299,10 @@ class AccountEdiFormat(models.Model):
 
         domain = [
             ("acc_number", "in", account_numbers),
-            # In some cases (e.g. business groups, organizations) the partner is not the owner
-            # of the bank account. This would cause an error, as we try to create an overlapping
-            # bank account number
+            # In some cases (e.g. business groups, organizations)
+            # the partner is not the owner of the bank account.
+            # This would cause an error, as we try to create
+            # an overlapping bank account number
             # ("partner_id", "=", partner_id),
             ("company_id", "in", [company_id, False]),
         ]
