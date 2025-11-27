@@ -23,7 +23,7 @@
     "summary": "Import/Export Finvoice 3.0 invoices",
     "version": "17.0.1.0.4",
     "category": "Accounting",
-    "website": "https://gitlab.com/tawasta/odoo/edi",
+    "website": "https://github.com/tawasta/edi",
     "author": "Futural",
     "license": "LGPL-3",
     "application": False,
