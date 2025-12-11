@@ -11,5 +11,6 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [account_edi_finvoice](account_edi_finvoice/) | 17.0.1.0.4 |  | Import/Export Finvoice 3.0 invoices
+[account_edi_finvoice_customer_contact](account_edi_finvoice_customer_contact/) | 17.0.1.0.0 |  | Add customer contact support for Finvoice 3.0 EDI
 
 [//]: # (end addons)
