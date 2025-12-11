@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+    <template id="export_finvoice" inherit_id="account_edi_finvoice.export_finvoice">
+        <xpath expr="//InvoiceRecipientLanguageCode" position="after">
+            <t t-set="customer_contact" t-value="record.customer_contact_id" />
+            <InvoiceRecipientContactPersonName
+                t-if="customer_contact"
+                t-esc="customer_contact.name"
+            />
+            <InvoiceRecipientContactPersonFunction
+                t-if="customer_contact"
+                t-esc="customer_contact.function"
+            />
+            <!-- There is a place for department, but Odoo core doesn't have that information -->
+            <!-- <InvoiceRecipientContactPersonDepartment t-if="customer_contact" t-esc="customer_contact.department" /> -->
+        </xpath>
+    </template>
+
+</odoo>
