@@ -66,14 +66,15 @@ class AccountMove(models.Model):
 
         spad = "SellerPostalAddressDetails"
 
-        invoice.partner_id.write(
-            {
-                "company_registry": business_code,
-                "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
-                "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
-                "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
-            }
-        )
+        # TODO: Why are we always overwriting the values here?
+        partner_vals = {
+            "company_registry": business_code,
+            "street": _find_value(f"./{spd}/{spad}/SellerStreetName"),
+            "city": _find_value(f"./{spd}/{spad}/SellerTownName"),
+            "zip": _find_value(f"./{spd}/{spad}/SellerPostCodeIdentifier"),
+        }
+
+        invoice.partner_id.write(partner_vals)
 
         # endregion
 
@@ -262,6 +263,17 @@ class AccountMove(models.Model):
         invoice.payment_reference = payment_reference
 
         epd = "EpiPartyDetails"
+
+        if not invoice.partner_id:
+            # Partner is missing, and needs to be created
+            partner_vals.update(
+                {
+                    "name": _find_value(f"./{spd}/SellerOrganisationName"),
+                }
+            )
+            _logger.debug("Creating a partner for with values: {}".format(partner_vals))
+            partner = self.env["res.partner"].create(partner_vals)
+            invoice.partner_id = partner
 
         partner_bank_id = edi_format._retrieve_bank_account(
             _find_value(f"./{ede}/{epd}/EpiBeneficiaryPartyDetails/EpiAccountID"),
