@@ -67,10 +67,11 @@ class AccountEdiFormat(models.Model):
 
     def _cancel_invoice_edi_finvoice(self, invoice):
         if self.code != "finvoice_3_0":
-            return super()._cancel_invoice_edi(invoice)
+            # Do nothing
+            return {}
 
-        # We could delete EDI documents here
-        return
+        # We could delete EDI documents here, cancel the invoice in APIX, etc.
+        return {}
 
     def _edi_content_invoice_edi_finvoice(self, invoice):
         xml_string = self.env["ir.qweb"]._render(
