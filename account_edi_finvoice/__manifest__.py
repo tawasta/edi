@@ -21,7 +21,7 @@
 {
     "name": "Import/Export invoices as Finvoice",
     "summary": "Import/Export Finvoice 3.0 invoices",
-    "version": "17.0.1.0.4",
+    "version": "17.0.1.0.5",
     "category": "Accounting",
     "website": "https://github.com/tawasta/edi",
     "author": "Futural",
