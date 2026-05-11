@@ -20,4 +20,7 @@
         "pdf_xml_attachment",
     ],
     "installable": True,
+    "data": [
+        "report/ir_actions_report.xml",
+    ],
 }

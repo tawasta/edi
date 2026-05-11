@@ -225,9 +225,9 @@ class SaleOrder(models.Model):
     def get_ubl_filename(self, doc_type, version="2.1"):
         """This method is designed to be inherited"""
         if doc_type == "rfq":
-            return f"UBL-RequestForQuotation-{version}.xml"
+            return f"UBL-RequestForQuotation-{version}-{self.name}.xml"
         elif doc_type == "order":
-            return f"UBL-Order-{version}.xml"
+            return f"UBL-Order-{version}-{self.name}.xml"
 
     def get_ubl_version(self):
         return self.env.context.get("ubl_version", "2.1")

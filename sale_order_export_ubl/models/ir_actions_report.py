@@ -8,18 +8,16 @@ from odoo import models
 class IrActionsReport(models.Model):
     _inherit = "ir.actions.report"
 
-    def _is_sale_order_report(self, report_ref):
+    def _is_sale_order_report_ubl(self, report_ref):
         return self._get_report(report_ref).report_name in (
-            "sale.report_saleorder_document",
-            "sale.report_saleorder",
-            "sale.report_saleorder_raw",
+            "sale_order_export_ubl.report_saleorder_ubl"
         )
 
     def _render_qweb_pdf_prepare_streams(self, report_ref, data, res_ids=None):
         collected_streams = super()._render_qweb_pdf_prepare_streams(
             report_ref, data, res_ids
         )
-        if collected_streams and res_ids and self._is_sale_order_report(report_ref):
+        if collected_streams and res_ids and self._is_sale_order_report_ubl(report_ref):
             report_sudo = self._get_report(report_ref)
             if not self.env.context.get("no_embedded_ubl_xml"):
                 records = self.env[report_sudo.model].browse(res_ids)
