@@ -28,7 +28,7 @@ class SaleOrder(models.Model):
             time = now_utc[11:]
             currency_node_name = "PricingCurrencyCode"
         elif doc_type == "order":
-            date = self.date_approve or self.date_order
+            date = self.date_order
             date = fields.Date.to_string(date)
             currency_node_name = "DocumentCurrencyCode"
         ubl_version = etree.SubElement(parent_node, ns["cbc"] + "UBLVersionID")
