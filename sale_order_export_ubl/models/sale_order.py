@@ -140,8 +140,10 @@ class SaleOrder(models.Model):
         return xml_root
 
     def generate_order_ubl_xml_etree(self, version="2.1"):
-        nsmap, ns = self._ubl_get_nsmap_namespace("Order-2", version=version)
-        xml_root = etree.Element("Order", nsmap=nsmap)
+        nsmap, ns = self._ubl_get_nsmap_namespace("OrderResponse-2", version=version)
+        # nsmap, ns = self._ubl_get_nsmap_namespace("Order-2", version=version)
+        # xml_root = etree.Element("Order", nsmap=nsmap)
+        xml_root = etree.Element("OrderResponse", nsmap=nsmap)
         doc_type = "order"
         self._ubl_add_header(doc_type, xml_root, ns, version=version)
 
@@ -289,8 +291,8 @@ class SaleOrder(models.Model):
     def get_ubl_sale_order_doc_type(self):
         self.ensure_one()
         doc_type = False
-        if self.state in self.get_rfq_states():
-            doc_type = "rfq"
-        elif self.state == "sale":
-            doc_type = "order"
+        # if self.state in self.get_rfq_states():
+        #    doc_type = "rfq"
+        # elif self.state == "sale":
+        doc_type = "order"
         return doc_type
