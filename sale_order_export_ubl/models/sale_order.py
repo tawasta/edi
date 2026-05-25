@@ -140,7 +140,8 @@ class SaleOrder(models.Model):
         return xml_root
 
     def generate_order_ubl_xml_etree(self, version="2.1"):
-        nsmap, ns = self._ubl_get_nsmap_namespace("Order-2", version=version)
+        nsmap, ns = self._ubl_get_nsmap_namespace("OrderResponse-2", version=version)
+        # nsmap, ns = self._ubl_get_nsmap_namespace("Order-2", version=version)
         # xml_root = etree.Element("Order", nsmap=nsmap)
         xml_root = etree.Element("OrderResponse", nsmap=nsmap)
         doc_type = "order"
