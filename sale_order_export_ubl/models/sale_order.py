@@ -40,9 +40,11 @@ class SaleOrder(models.Model):
         if doc_type == "rfq":  # IssueTime is required on RFQ, not on order
             issue_time = etree.SubElement(parent_node, ns["cbc"] + "IssueTime")
             issue_time.text = time
-        if self.note:
+        # if self.note:
+        if self.partner_shipping_id:
             note = etree.SubElement(parent_node, ns["cbc"] + "Note")
-            note.text = self.note
+            note.text = self.partner_shipping_id.name
+            # note.text = self.note
         doc_currency = etree.SubElement(parent_node, ns["cbc"] + currency_node_name)
         doc_currency.text = self.currency_id.name
 
@@ -305,3 +307,14 @@ class SaleOrder(models.Model):
         # elif self.state == "sale":
         doc_type = "order"
         return doc_type
+
+    @api.model
+    def _ubl_get_party_identification(self, commercial_partner):
+        values = {}
+
+        if commercial_partner.edicode:
+            values = {
+                "edicode": commercial_partner.edicode,
+            }
+
+        return values
