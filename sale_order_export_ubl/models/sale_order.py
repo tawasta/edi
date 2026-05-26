@@ -148,11 +148,20 @@ class SaleOrder(models.Model):
         self._ubl_add_header(doc_type, xml_root, ns, version=version)
 
         self._ubl_add_customer_party(
-            False, self.company_id, "BuyerCustomerParty", xml_root, ns, version=version
+            self.partner_id, False, "BuyerCustomerParty", xml_root, ns, version=version
         )
         self._ubl_add_supplier_party(
-            self.partner_id, False, "SellerSupplierParty", xml_root, ns, version=version
+            False, self.company_id, "SellerSupplierParty", xml_root, ns, version=version
         )
+
+        #        self._ubl_add_customer_party(
+        #           False, self.company_id, "BuyerCustomerParty",
+        #           xml_root, ns, version=version
+        #        )
+        #        self._ubl_add_supplier_party(
+        #           self.partner_id, False, "SellerSupplierParty",
+        #           xml_root, ns, version=version
+        #        )
         delivery_partner = self.get_delivery_partner()
         self._ubl_add_delivery(delivery_partner, xml_root, ns, version=version)
         if self.incoterm:
