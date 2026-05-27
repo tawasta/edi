@@ -19,16 +19,16 @@
 ##############################################################################
 
 {
-    'name': 'Despatch Advice UBL',
-    'summary': 'Despatch Advice UBL',
-    'version': '17.0.1.0.0',
-    'category': 'Stock',
-    'website': 'https://tawasta.fi',
-    'author': 'Futural',
-    'license': 'AGPL-3',
-    'application': False,
-    'installable': True,
-    'depends': [
+    "name": "Despatch Advice UBL",
+    "summary": "Despatch Advice UBL",
+    "version": "17.0.1.0.0",
+    "category": "Stock",
+    "website": "https://github.com/tawasta/edi",
+    "author": "Futural",
+    "license": "AGPL-3",
+    "application": False,
+    "installable": True,
+    "depends": [
         "base_ubl_generate",
         "account_tax_unece",
         "pdf_xml_attachment",
@@ -36,7 +36,5 @@
         "sale_stock",
         "stock_picking_volume",
     ],
-    'data': [
-        "report/ir_actions_report.xml"
-    ],
+    "data": ["report/ir_actions_report.xml"],
 }

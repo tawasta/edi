@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
     <!-- When declaring a record in XML:
             1. Place id attribute before model
@@ -13,7 +13,7 @@
     <record id="view_id" model="ir.ui.view">
         <field name="name">view.name</field>
         <field name="model">object_name</field>
-        <field name="priority" eval="16"/>
+        <field name="priority" eval="16" />
         <field name="arch" type="xml">
 
             <!-- Content goes here-->
@@ -31,7 +31,7 @@
 
     <!-- Use the following record for inherited view -->
     <record id="original_id" model="ir.ui.view">
-        <field name="inherit_id" ref="original_module.original_id"/>
+        <field name="inherit_id" ref="original_module.original_id" />
 
     </record>
 

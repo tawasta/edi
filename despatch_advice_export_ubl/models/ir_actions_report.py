@@ -13,7 +13,11 @@ class IrActionsReport(models.Model):
         collected_streams = super()._render_qweb_pdf_prepare_streams(
             report_ref, data, res_ids
         )
-        if collected_streams and res_ids and self._is_stock_picking_report_ubl(report_ref):
+        if (
+            collected_streams
+            and res_ids
+            and self._is_stock_picking_report_ubl(report_ref)
+        ):
             report_sudo = self._get_report(report_ref)
             if not self.env.context.get("no_embedded_ubl_xml"):
                 records = self.env[report_sudo.model].browse(res_ids)
