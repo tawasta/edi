@@ -110,7 +110,6 @@ class StockPicking(models.Model):
     def generate_picking_ubl_xml_etree(self, version="2.1"):
         nsmap, ns = self._ubl_get_nsmap_namespace("CommonExtensionComponents-2", version=version)
         xml_root = etree.Element("DespatchAdvice", nsmap=nsmap)
-#        doc_type = "order"
         self._ubl_add_header(xml_root, ns, version=version)
 
         if self.sale_id:
@@ -120,12 +119,7 @@ class StockPicking(models.Model):
 
         partner = self.partner_id
         despatch_supplier_party_root = etree.SubElement(xml_root, ns["cac"] + "DespatchSupplierParty")
-#        partner_ref = self._ubl_get_customer_assigned_id(partner)
-#        if partner_ref:
-#            customer_ref = etree.SubElement(
-#                delivery_customer_party_root, ns["cbc"] + "SupplierAssignedAccountID"
-#            )
-#            customer_ref.text = partner_ref
+
         self._ubl_add_delivery_party(
             self.company_id.partner_id, False, "Party", despatch_supplier_party_root, ns, version=version
         )
@@ -144,10 +138,136 @@ class StockPicking(models.Model):
 
         seller_supplier_party_root = etree.SubElement(xml_root, ns["cac"] + "SellerSupplierParty")
 
-#        self._ubl_add_supplier_party(
         self._ubl_add_delivery_customer_party(
             self.company_id.partner_id, False, "Party", seller_supplier_party_root, ns, version=version
         )
+
+        shipment_root = etree.SubElement(xml_root, ns["cac"] + "Shipment")
+
+        picking_name = etree.SubElement(shipment_root, ns["cbc"] + "ID")
+        picking_name.text = self.name
+
+        picking_net_weight = 0
+        picking_gross_weight = 0
+        for move in self.move_ids:
+            picking_net_weight += (move.product_qty * move.product_id.net_weight)
+            picking_gross_weight += (move.product_qty * move.product_id.weight)
+
+        gross_weight_sum_picking = etree.SubElement(
+            shipment_root, ns["cbc"] + "GrossWeightMeasure", unitCode="KG"
+        )
+        gross_weight_sum_picking.text = str(picking_gross_weight)
+
+        net_weight_sum_picking = etree.SubElement(
+            shipment_root, ns["cbc"] + "NetWeightMeasure", unitCode="KG"
+        )
+        net_weight_sum_picking.text = str(picking_net_weight)
+
+        volume_sum_picking = etree.SubElement(
+            shipment_root, ns["cbc"] + "GrossVolumeMeasure", unitCode="MTQ"
+        )
+        volume_sum_picking.text = str(self.volume)
+
+        total_transport_qty_picking = etree.SubElement(
+            shipment_root, ns["cbc"] + "TotalTransportHandlingUnitQuantity"
+        )
+        total_transport_qty_picking.text = str(0.00)
+
+        goods_item_picking = etree.SubElement(
+            shipment_root, ns["cac"] + "GoodsItem"
+        )
+
+        goods_item_gross_weight = etree.SubElement(
+            goods_item_picking, ns["cbc"] + "GrossWeightMeasure", unitCode="KG"
+        )
+        goods_item_gross_weight.text = str(0.00)
+
+        goods_item_net_weight = etree.SubElement(
+            goods_item_picking, ns["cbc"] + "NetWeightMeasure", unitCode="KG"
+        )
+        goods_item_net_weight.text = str(0.00)
+
+        goods_item_volume = etree.SubElement(
+            goods_item_picking, ns["cbc"] + "GrossVolumeMeasure", unitCode="MTQ"
+        )
+        goods_item_volume.text = str(0.00)
+
+        for move in self.move_ids:
+            despatch_root = etree.SubElement(xml_root, ns["cac"] + "DespatchLine")
+            despatch_id = etree.SubElement(despatch_root, ns["cbc"] + "ID")
+            despatch_id.text = move.picking_id.name
+            despatch_delivered = etree.SubElement(despatch_root, ns["cbc"] + "DeliveredQuantity", unitCode="C62")
+            despatch_delivered.text = str(move.quantity)
+            despatch_outstanding = etree.SubElement(despatch_root, ns["cbc"] + "OutstandingQuantity", unitCode="C62")
+            outstanding_qty = 0 if move.product_uom_qty - move.quantity < 0 else move.product_uom_qty - move.quantity
+            despatch_outstanding.text = str(outstanding_qty)
+            despatch_oversupply = etree.SubElement(despatch_root, ns["cbc"] + "OversupplyQuantity", unitCode="C62")
+            despatch_oversupply.text = str(abs(move.product_uom_qty - move.quantity))
+
+            sale_line = move.sale_line_id
+            sale_line_root = etree.SubElement(despatch_root, ns["cac"] + "OrderLineReference")
+            line_id = etree.SubElement(sale_line_root, ns["cbc"] + "LineID")
+            line_id.text = "null"
+            sale_line_id = etree.SubElement(sale_line_root, ns["cbc"] + "SalesOrderLineID")
+            sale_line_id.text = "null"
+            if sale_line.order_id.client_order_ref:
+                order_root = etree.SubElement(sale_line_root, ns["cbc"] + "OrderReference")
+                order_id = etree.SubElement(order_root, ns["cbc"] + "ID")
+                order_id.text = sale_line.order_id.client_order_ref
+                sales_order_id = etree.SubElement(order_root, ns["cbc"] + "SalesOrderID")
+                sales_order_id.text = sale_line.order_id.client_order_ref
+
+            #self._ubl_add_item(
+            #    move.name, move.product_id, despatch_root, ns, type_="sale", seller=False, version=version
+            #)
+
+            item_root = etree.SubElement(despatch_root, ns["cac"] + "Item")
+            item_desc = etree.SubElement(item_root, ns["cbc"] + "Description")
+            item_desc.text = move.name
+            item_name = etree.SubElement(item_root, ns["cbc"] + "Name")
+            item_name.text = move.name
+            seller_item_root = etree.SubElement(item_root, ns["cac"] + "SellersItemIdentification")
+            seller_item_id = etree.SubElement(seller_item_root, ns["cbc"] + "ID")
+            seller_item_id.text = str(move.product_id.default_code)
+            standard_item_root = etree.SubElement(item_root, ns["cac"] + "StandardItemIdentification")
+            standard_item_id = etree.SubElement(standard_item_root, ns["cbc"] + "ID")
+            standard_item_id.text = str(move.product_id.barcode)
+            country_item_root = etree.SubElement(item_root, ns["cac"] + "OriginCountry")
+            country_item_id = etree.SubElement(country_item_root, ns["cbc"] + "IdentificationCode")
+            country_item_id.text = str(move.product_id.origin_country_id.code)
+
+            taxes = sale_line.tax_id
+            skip_taxes = self.env.context.get("ubl_add_item__skip_taxes")
+            if taxes and not skip_taxes:
+                for tax in taxes:
+                    classified_tax_root = etree.SubElement(item_root, ns["cac"] + "ClassifiedTaxCategory")
+                    classified_tax_id = etree.SubElement(classified_tax_root, ns["cbc"] + "ID")
+                    classified_tax_id.text = str(tax.unece_categ_code)
+                    classified_tax_name = etree.SubElement(classified_tax_root, ns["cbc"] + "Name")
+                    classified_tax_name.text = str(tax.name)
+                    classified_tax_percent = etree.SubElement(classified_tax_root, ns["cbc"] + "Percent")
+                    classified_tax_percent.text = str(tax.amount)
+                    base_unit_measure = etree.SubElement(
+                        classified_tax_root, ns["cbc"] + "BaseUnitMeasure", unitCode="C62"
+                    )
+                    base_unit_measure.text = str(sale_line.price_unit)
+                    currency_name = sale_line.order_id.currency_id.name
+                    base_unit_measure = etree.SubElement(
+                        classified_tax_root, ns["cbc"] + "PerUnitAmount", currencyID=str(currency_name)
+                    )
+                    base_unit_measure.text = str(sale_line.price_unit)
+                    tax_scheme_root = etree.SubElement(classified_tax_root, ns["cac"] + "TaxScheme")
+
+
+                    #self._ubl_add_tax_category(
+                    #    tax,
+                    #    item_root,
+                    #    ns,
+                    #    node_name="ClassifiedTaxCategory",
+                    #    version=version,
+                    #)
+
+
 #            False, self.company_id, "SellerSupplierParty", xml_root, ns, version=version
 
 #            False, self.company_id, "Party", seller_supplier_party_root, ns, version=version
@@ -165,44 +285,6 @@ class StockPicking(models.Model):
 
 
 
-
-
-
-#        country = self.partner_id.country_id and self.partner_id.country_id
-#        if country:
-#            self._ubl_add_country(country, xml_root, ns, version=version)
-#        self.ubl_parse_delivery(xml_root, ns)
-        #country, parent_node, ns, version="2.1"
-
-        #self._ubl_add_customer_party(
-        #    self.partner_id, False, "BuyerCustomerParty", xml_root, ns, version=version
-        #)
-        #self._ubl_add_supplier_party(
-        #    False, self.company_id, "SellerSupplierParty", xml_root, ns, version=version
-        #)
-
-        ##        self._ubl_add_customer_party(
-        ##           False, self.company_id, "BuyerCustomerParty",
-        ##           xml_root, ns, version=version
-        ##        )
-        ##        self._ubl_add_supplier_party(
-        ##           self.partner_id, False, "SellerSupplierParty",
-        ##           xml_root, ns, version=version
-        ##        )
-        #delivery_partner = self.get_delivery_partner()
-        #self._ubl_add_delivery(delivery_partner, xml_root, ns, version=version)
-        #if self.incoterm:
-        #    self._ubl_add_delivery_terms(self.incoterm, xml_root, ns, version=version)
-        #if self.payment_term_id:
-        #    self._ubl_add_payment_terms(
-        #        self.payment_term_id, xml_root, ns, version=version
-        #    )
-        #self._ubl_add_monetary_total(xml_root, ns, version=version)
-
-        #for oline in self.order_line:
-        #    # line_number as third arg comes from sale.order.line id field
-        #    # see https://github.com/OCA/edi/issues/300
-        #    self._ubl_add_order_line(xml_root, oline, oline.id, ns, version=version)
         return xml_root
 
     @api.model

@@ -29,10 +29,12 @@
     'application': False,
     'installable': True,
     'depends': [
-        "sale_stock",
         "base_ubl_generate",
         "account_tax_unece",
         "pdf_xml_attachment",
+        "product_net_weight",
+        "sale_stock",
+        "stock_picking_volume",
     ],
     'data': [
         "report/ir_actions_report.xml"
