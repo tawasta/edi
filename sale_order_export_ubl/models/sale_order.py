@@ -149,6 +149,11 @@ class SaleOrder(models.Model):
         doc_type = "order"
         self._ubl_add_header(doc_type, xml_root, ns, version=version)
 
+        if self.client_order_ref:
+            self._ubl_add_order_reference(
+                self.client_order_ref, xml_root, ns, version=version
+            )
+
         self._ubl_add_customer_party(
             self.partner_id, False, "BuyerCustomerParty", xml_root, ns, version=version
         )
@@ -318,3 +323,18 @@ class SaleOrder(models.Model):
             }
 
         return values
+
+    @api.model
+    def _ubl_add_order_reference(self, reference, parent_node, ns, version="2.1"):
+        reference_root = etree.SubElement(parent_node, ns["cac"] + "OrderReference")
+
+        reference_name = etree.SubElement(reference_root, ns["cbc"] + "ID")
+        reference_name.text = reference
+
+        order_name = etree.SubElement(reference_root, ns["cbc"] + "SalesOrderID")
+        order_name.text = self.name
+
+        date = self.date_order
+        date = fields.Date.to_string(date)
+        issue_date = etree.SubElement(reference_root, ns["cbc"] + "IssueDate")
+        issue_date.text = date
