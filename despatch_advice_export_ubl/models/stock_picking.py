@@ -124,6 +124,7 @@ class StockPicking(models.Model):
         )
 
         self._ubl_add_delivery_customer_party(
+            True,
             self.partner_id,
             False,
             "Party",
@@ -150,6 +151,7 @@ class StockPicking(models.Model):
         )
 
         self._ubl_add_delivery_customer_party(
+            False,
             self.company_id.partner_id,
             False,
             "Party",
@@ -347,7 +349,10 @@ class StockPicking(models.Model):
                 line_shipment_delivery, ns["cbc"] + "ActualDeliveryDate"
             )
 
-            effective_date = fields.Datetime.to_string(move.picking_id.date_done)
+            if move.picking_id.date_done:
+                effective_date = fields.Datetime.to_string(move.picking_id.date_done)
+            else:
+                effective_date = ""
             line_shipment_delivery_date.text = effective_date
 
             line_transport_unit_root = etree.SubElement(
@@ -369,7 +374,7 @@ class StockPicking(models.Model):
 
     @api.model
     def _ubl_add_order_reference(self, sale, parent_node, ns, version="2.1"):
-        reference = sale.client_order_ref
+        reference = sale.client_order_ref or ""
         reference_root = etree.SubElement(parent_node, ns["cac"] + "OrderReference")
 
         reference_name = etree.SubElement(reference_root, ns["cbc"] + "ID")
@@ -408,9 +413,12 @@ class StockPicking(models.Model):
         if commercial_partner.website:
             website = etree.SubElement(party, ns["cbc"] + "WebsiteURI")
             website.text = commercial_partner.website
-        self._ubl_add_party_identification(
-            commercial_partner, party, ns, version=version
-        )
+
+        sale_order_partner_id = self.sale_id and self.sale_id.partner_id
+        if sale_order_partner_id:
+            self._ubl_add_party_identification(
+                sale_order_partner_id, party, ns, version=version
+            )
         party_name = etree.SubElement(party, ns["cac"] + "PartyName")
         name = etree.SubElement(party_name, ns["cbc"] + "Name")
         name.text = "null"
@@ -418,16 +426,23 @@ class StockPicking(models.Model):
 
     @api.model
     def _ubl_add_delivery_customer_party(
-        self, partner, company, node_name, parent_node, ns, version="2.1"
+        self, use_customer, partner, company, node_name, parent_node, ns, version="2.1"
     ):
         commercial_partner = partner.commercial_partner_id
         party = etree.SubElement(parent_node, ns["cac"] + node_name)
         if commercial_partner.website:
             website = etree.SubElement(party, ns["cbc"] + "WebsiteURI")
             website.text = commercial_partner.website
-        self._ubl_add_party_identification(
-            commercial_partner, party, ns, version=version
-        )
+
+        if use_customer:
+            partner_identification = self.sale_id and self.sale_id.partner_id or False
+        else:
+            partner_identification = commercial_partner
+
+        if partner_identification:
+            self._ubl_add_party_identification(
+                partner_identification, party, ns, version=version
+            )
         party_name = etree.SubElement(party, ns["cac"] + "PartyName")
         name = etree.SubElement(party_name, ns["cbc"] + "Name")
         name.text = commercial_partner.name
