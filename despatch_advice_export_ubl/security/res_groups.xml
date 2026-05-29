@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="group_despatch_advice_export" model="res.groups">
+        <field name="name">Despatch Advice export</field>
+        <field name="category_id" ref="base.module_category_usability" />
+    </record>
+</odoo>

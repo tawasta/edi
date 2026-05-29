@@ -1,5 +1,7 @@
+import base64
 import logging
 from io import BytesIO
+from pathlib import Path
 
 from lxml import etree
 
@@ -11,6 +13,8 @@ logger = logging.getLogger(__name__)
 class StockPicking(models.Model):
     _name = "stock.picking"
     _inherit = ["stock.picking", "base.ubl"]
+
+    ubl_export_done = fields.Boolean(default=False)
 
     def _ubl_add_header(self, parent_node, ns, version="2.1"):
         now_utc = fields.Datetime.to_string(fields.Datetime.now())
@@ -55,6 +59,43 @@ class StockPicking(models.Model):
         return self.env["pdf.xml.tool"].pdf_embed_xml(
             pdf_content, xml_filename, xml_string
         )
+
+    def cron_export_despatch_advice_ubl_file(self):
+        pickings = self.env["stock.picking"].search([("ubl_export_done", "=", False)])
+        pickings = pickings.filtered(
+            lambda p: p.sale_id
+            and p.sale_id.partner_id.default_ubl_import_partner is True
+        )
+        for picking in pickings:
+            picking.export_despatch_advice_ubl_file()
+
+    def export_despatch_advice_ubl_file(self):
+        self.ensure_one()
+        attach_values = self._get_ubl_xml_attachment_values()
+        if attach_values:
+            ubl_file_path = (
+                self.env["ir.config_parameter"]
+                .sudo()
+                .get_param("despatch_advice_export_ubl.path")
+            )
+
+            if ubl_file_path:
+                file_path = Path(f"{ubl_file_path}DESADV_{str(self.id)}.xml")
+                with open(file_path, "wb") as file:
+                    file.write(attach_values["xml_string"])
+
+            filename_xml = f"DESADV_{str(self.id)}.xml"
+            attachment_values = {
+                "name": filename_xml,
+                "type": "binary",
+                "datas": base64.b64encode(attach_values["xml_string"]),
+                "mimetype": "application/xml",
+                "res_model": "stock.picking",
+                "res_id": self.id,
+            }
+            attachment = self.env["ir.attachment"].create(attachment_values)
+        self.ubl_export_done = True
+        return attachment
 
     def add_xml_in_pdf_buffer(self, buffer):
         self.ensure_one()
@@ -445,7 +486,7 @@ class StockPicking(models.Model):
             )
         party_name = etree.SubElement(party, ns["cac"] + "PartyName")
         name = etree.SubElement(party_name, ns["cbc"] + "Name")
-        name.text = commercial_partner.name
+        name.text = str(commercial_partner.name)
         self._ubl_add_address(partner, "PostalAddress", party, ns, version=version)
 
     @api.model
