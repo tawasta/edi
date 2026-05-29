@@ -235,11 +235,11 @@ class StockPicking(models.Model):
                 despatch_root, ns["cac"] + "OrderLineReference"
             )
             line_id = etree.SubElement(sale_line_root, ns["cbc"] + "LineID")
-            line_id.text = "null"
+            line_id.text = str(sale_line.id)
             sale_line_id = etree.SubElement(
                 sale_line_root, ns["cbc"] + "SalesOrderLineID"
             )
-            sale_line_id.text = "null"
+            sale_line_id.text = str(sale_line.sequence)
             if sale_line.order_id.client_order_ref:
                 order_root = etree.SubElement(
                     sale_line_root, ns["cbc"] + "OrderReference"
@@ -258,9 +258,9 @@ class StockPicking(models.Model):
 
             item_root = etree.SubElement(despatch_root, ns["cac"] + "Item")
             item_desc = etree.SubElement(item_root, ns["cbc"] + "Description")
-            item_desc.text = move.name
+            item_desc.text = move.product_id.name
             item_name = etree.SubElement(item_root, ns["cbc"] + "Name")
-            item_name.text = move.name
+            item_name.text = move.product_id.name
             seller_item_root = etree.SubElement(
                 item_root, ns["cac"] + "SellersItemIdentification"
             )
@@ -447,6 +447,53 @@ class StockPicking(models.Model):
         name = etree.SubElement(party_name, ns["cbc"] + "Name")
         name.text = commercial_partner.name
         self._ubl_add_address(partner, "PostalAddress", party, ns, version=version)
+
+    @api.model
+    def _ubl_add_address(self, partner, node_name, parent_node, ns, version="2.1"):
+        address = etree.SubElement(parent_node, ns["cac"] + node_name)
+        if partner.street and partner.street2:
+            addstreetname = etree.SubElement(
+                address, ns["cbc"] + "AdditionalStreetName"
+            )
+            addstreetname.text = partner.street2
+        # if oca/partner-contact/partner_address_street3 is installed
+        if hasattr(partner, "street3") and partner.street3:
+            # In an address, the real street is usually put in the last field
+            streetname = etree.SubElement(address, ns["cbc"] + "StreetName")
+            if partner.street and partner.street2:
+                # The first field is usually the Department
+                department = etree.SubElement(address, ns["cbc"] + "Department")
+                department.text = partner.street
+                streetname.text = partner.street2
+                addstreetname.text = partner.street3
+            elif partner.street or partner.street2:
+                addstreetname = etree.SubElement(
+                    address, ns["cbc"] + "AdditionalStreetName"
+                )
+                addstreetname.text = partner.street3
+            else:
+                streetname = etree.SubElement(address, ns["cbc"] + "StreetName")
+                streetname.text = partner.street3
+        if partner.city:
+            city = etree.SubElement(address, ns["cbc"] + "CityName")
+            city.text = partner.city
+        if partner.zip:
+            zip_code = etree.SubElement(address, ns["cbc"] + "PostalZone")
+            zip_code.text = partner.zip
+        if partner.street or partner.street2:
+            address_line_root = etree.SubElement(address, ns["cac"] + "AddressLine")
+
+            line_root = etree.SubElement(address_line_root, ns["cbc"] + "Line")
+            line_root.text = partner.street or partner.street2
+        if partner.state_id:
+            state = etree.SubElement(address, ns["cbc"] + "CountrySubentity")
+            state.text = partner.state_id.name
+            state_code = etree.SubElement(address, ns["cbc"] + "CountrySubentityCode")
+            state_code.text = partner.state_id.code
+        if partner.country_id:
+            self._ubl_add_country(partner.country_id, address, ns, version=version)
+        else:
+            logger.warning("UBL: missing country on partner %s", partner.name)
 
     @api.model
     def _ubl_get_party_identification(self, commercial_partner):
