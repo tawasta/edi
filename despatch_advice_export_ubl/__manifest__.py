@@ -21,7 +21,7 @@
 {
     "name": "Despatch Advice UBL",
     "summary": "Despatch Advice UBL",
-    "version": "17.0.1.0.2",
+    "version": "17.0.1.1.2",
     "category": "Stock",
     "website": "https://github.com/tawasta/edi",
     "author": "Futural",
@@ -33,8 +33,14 @@
         "account_tax_unece",
         "pdf_xml_attachment",
         "product_net_weight",
+        "sale_order_export_ubl",
         "sale_stock",
         "stock_picking_volume",
     ],
-    "data": ["report/ir_actions_report.xml"],
+    "data": [
+        "data/ir_cron.xml",
+        "report/ir_actions_report.xml",
+        "security/res_groups.xml",
+        "views/stock_picking.xml",
+    ],
 }
