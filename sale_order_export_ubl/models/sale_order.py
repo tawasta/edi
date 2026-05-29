@@ -9,6 +9,7 @@ from lxml import etree
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools import float_is_zero, float_round
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ class SaleOrder(models.Model):
         line_root = etree.SubElement(parent_node, ns["cac"] + "RequestForQuotationLine")
         self._ubl_add_line_item(
             line_number,
+            oline,
             oline.name,
             oline.product_id,
             "sale",
@@ -87,6 +89,7 @@ class SaleOrder(models.Model):
         price_precision = dpo.precision_get("Product Price")
         self._ubl_add_line_item(
             line_number,
+            oline,
             oline.name,
             oline.product_id,
             "sale",
@@ -100,6 +103,93 @@ class SaleOrder(models.Model):
             qty_precision=qty_precision,
             price_precision=price_precision,
             version=version,
+        )
+
+    @api.model
+    def _ubl_add_line_item(
+        self,
+        line_number,
+        sale_line,
+        name,
+        product,
+        type_,
+        quantity,
+        uom,
+        parent_node,
+        ns,
+        seller=False,
+        currency=False,
+        price_subtotal=False,
+        qty_precision=3,
+        price_precision=2,
+        version="2.1",
+    ):
+        line_item = etree.SubElement(parent_node, ns["cac"] + "LineItem")
+        line_item_id = etree.SubElement(line_item, ns["cbc"] + "ID")
+        line_item_id.text = str(line_number)
+        if not uom.unece_code:
+            raise UserError(
+                _("Missing UNECE code on unit of measure '%(uom)s'", uom=uom.name)
+            )
+        quantity_node = etree.SubElement(
+            line_item, ns["cbc"] + "Quantity", unitCode=uom.unece_code
+        )
+        quantity_node.text = str(quantity)
+        if currency and price_subtotal:
+            line_backorder_qty = etree.SubElement(
+                line_item, ns["cbc"] + "MaximumBackorderQuantity", unitCode="C62"
+            )
+            backorder_qty = (
+                0
+                if sale_line.product_uom_qty - sale_line.qty_delivered < 0
+                else sale_line.product_uom_qty - sale_line.qty_delivered
+            )
+            line_backorder_qty.text = str(backorder_qty)
+
+            line_amount = etree.SubElement(
+                line_item, ns["cbc"] + "LineExtensionAmount", currencyID=currency.name
+            )
+            line_amount.text = str(price_subtotal)
+
+            line_delivery_root = etree.SubElement(line_item, ns["cac"] + "Delivery")
+            line_delivery_qty = etree.SubElement(
+                line_delivery_root, ns["cbc"] + "Quantity", unitCode="C62"
+            )
+            line_delivery_qty.text = str(sale_line.qty_delivered)
+
+            actual_delivery_date = ""
+            if sale_line.order_id.effective_date:
+                actual_delivery_date = fields.Datetime.to_string(
+                    sale_line.order_id.effective_date
+                )
+
+            line_delivery_date = etree.SubElement(
+                line_delivery_root, ns["cbc"] + "ActualDeliveryDate"
+            )
+            line_delivery_date.text = str(actual_delivery_date)
+
+            price_unit = 0.0
+            # Use price_subtotal/qty to compute price_unit to be sure
+            # to get a *tax_excluded* price unit
+            if not float_is_zero(quantity, precision_digits=qty_precision):
+                price_unit = float_round(
+                    price_subtotal / float(quantity), precision_digits=price_precision
+                )
+            price = etree.SubElement(line_item, ns["cac"] + "Price")
+            price_amount = etree.SubElement(
+                price, ns["cbc"] + "PriceAmount", currencyID=currency.name
+            )
+            price_amount.text = str(price_unit)
+
+            price_type = etree.SubElement(price, ns["cbc"] + "PriceType")
+            price_type.text = "0"
+
+            base_qty = etree.SubElement(
+                price, ns["cbc"] + "BaseQuantity", unitCode=uom.unece_code
+            )
+            base_qty.text = "1"  # What else could it be ?
+        self._ubl_add_item(
+            name, product, line_item, ns, type_=type_, seller=seller, version=version
         )
 
     def get_delivery_partner(self):
@@ -316,6 +406,7 @@ class SaleOrder(models.Model):
     @api.model
     def _ubl_get_party_identification(self, commercial_partner):
         values = {}
+        commercial_partner = self.partner_id
 
         if commercial_partner.edicode:
             values = {
