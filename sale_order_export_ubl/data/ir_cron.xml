@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
-    <record id="ir_cron_export_despatch_advice" model="ir.cron">
+    <record id="ir_cron_export_order_response" model="ir.cron">
         <field name="name">Export Order Response</field>
         <field name="model_id" ref="model_sale_order" />
         <field name="state">code</field>
