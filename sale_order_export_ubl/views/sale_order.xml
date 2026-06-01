@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="view_order_form" model="ir.ui.view">
+        <field name="name">sale.order.form.order.response</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_cancel']" position="after">
+                <button
+                    name="export_order_response_ubl_file"
+                    string="Generate UBL"
+                    type="object"
+                    groups="sale_order_export_ubl.group_order_response_export"
+                    class="oe_highlight"
+                />
+            </xpath>
+
+            <xpath
+                expr="//page[@name='other_information']//field[@name='company_id']"
+                position="after"
+            >
+                <field
+                    name="ubl_export_done"
+                    groups="sale_order_export_ubl.group_order_response_export"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

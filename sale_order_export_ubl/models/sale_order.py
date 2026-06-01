@@ -2,8 +2,10 @@
 # Copyright 2020 Onestein (<https://www.onestein.eu>)
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+import base64
 import logging
 from io import BytesIO
+from pathlib import Path
 
 from lxml import etree
 
@@ -17,6 +19,8 @@ logger = logging.getLogger(__name__)
 class SaleOrder(models.Model):
     _name = "sale.order"
     _inherit = ["sale.order", "base.ubl"]
+
+    ubl_export_done = fields.Boolean(default=False)
 
     @api.model
     def get_rfq_states(self):
@@ -197,6 +201,47 @@ class SaleOrder(models.Model):
         if self.partner_shipping_id:
             return self.partner_shipping_id
         return self.company_id.partner_id
+
+    def cron_export_order_response_ubl_file(self):
+        sale_orders = self.env["sale.order"].search(
+            [
+                ("ubl_export_done", "=", False),
+                ("state", "=", "sale"),
+            ]
+        )
+        sale_orders = sale_orders.filtered(
+            lambda s: s.partner_id.default_ubl_import_partner is True
+        )
+        for sale in sale_orders:
+            sale.export_order_response_ubl_file()
+
+    def export_order_response_ubl_file(self):
+        self.ensure_one()
+        attach_values = self._get_ubl_xml_attachment_values()
+        if attach_values:
+            ubl_file_path = (
+                self.env["ir.config_parameter"]
+                .sudo()
+                .get_param("order_response_export_ubl.path")
+            )
+
+            if ubl_file_path:
+                file_path = Path(f"{ubl_file_path}ORDRSP_{str(self.id)}.xml")
+                with open(file_path, "wb") as file:
+                    file.write(attach_values["xml_string"])
+
+            filename_xml = f"ORDRSP_{str(self.id)}.xml"
+            attachment_values = {
+                "name": filename_xml,
+                "type": "binary",
+                "datas": base64.b64encode(attach_values["xml_string"]),
+                "mimetype": "application/xml",
+                "res_model": "sale.order",
+                "res_id": self.id,
+            }
+            attachment = self.env["ir.attachment"].create(attachment_values)
+        self.ubl_export_done = True
+        return attachment
 
     def generate_rfq_ubl_xml_etree(self, version="2.1"):
         nsmap, ns = self._ubl_get_nsmap_namespace(
