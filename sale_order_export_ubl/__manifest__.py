@@ -3,7 +3,7 @@
 
 {
     "name": "Sale Order UBL",
-    "version": "17.0.1.0.6",
+    "version": "17.0.1.1.6",
     "category": "Sale Management",
     "license": "AGPL-3",
     "summary": "Embed UBL XML file inside the PDF sale order",
@@ -21,6 +21,9 @@
     ],
     "installable": True,
     "data": [
+        "data/ir_cron.xml",
         "report/ir_actions_report.xml",
+        "security/res_groups.xml",
+        "views/sale_order.xml",
     ],
 }
