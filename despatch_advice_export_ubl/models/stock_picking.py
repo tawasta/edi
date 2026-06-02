@@ -61,7 +61,12 @@ class StockPicking(models.Model):
         )
 
     def cron_export_despatch_advice_ubl_file(self):
-        pickings = self.env["stock.picking"].search([("ubl_export_done", "=", False)])
+        pickings = self.env["stock.picking"].search(
+            [
+                ("ubl_export_done", "=", False),
+                ("state", "=", "done"),
+            ]
+        )
         pickings = pickings.filtered(
             lambda p: p.sale_id
             and p.sale_id.partner_id.default_ubl_import_partner is True
