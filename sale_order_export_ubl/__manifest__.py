@@ -3,7 +3,7 @@
 
 {
     "name": "Sale Order UBL",
-    "version": "17.0.1.1.7",
+    "version": "17.0.1.1.8",
     "category": "Sale Management",
     "license": "AGPL-3",
     "summary": "Embed UBL XML file inside the PDF sale order",
