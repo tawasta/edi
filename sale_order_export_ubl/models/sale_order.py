@@ -319,7 +319,7 @@ class SaleOrder(models.Model):
         #           xml_root, ns, version=version
         #        )
         delivery_partner = self.get_delivery_partner()
-        self._ubl_add_delivery(delivery_partner, xml_root, ns, version=version)
+        self._ubl_add_order_delivery(delivery_partner, xml_root, ns, version=version)
         if self.incoterm:
             self._ubl_add_delivery_terms(self.incoterm, xml_root, ns, version=version)
         if self.payment_term_id:
@@ -465,7 +465,6 @@ class SaleOrder(models.Model):
     @api.model
     def _ubl_get_party_identification(self, commercial_partner):
         values = {}
-        commercial_partner = self.partner_id
 
         if commercial_partner.edicode:
             values = {
@@ -538,3 +537,39 @@ class SaleOrder(models.Model):
             self._ubl_add_party_legal_entity(
                 commercial_partner, party, ns, version="2.1"
             )
+
+    @api.model
+    def _ubl_add_order_delivery(self, delivery_partner, parent_node, ns, version="2.1"):
+        delivery = etree.SubElement(parent_node, ns["cac"] + "Delivery")
+        delivery_location = etree.SubElement(delivery, ns["cac"] + "DeliveryLocation")
+        self._ubl_add_address(
+            delivery_partner, "Address", delivery_location, ns, version=version
+        )
+        self._ubl_add_order_party(
+            delivery_partner, False, "DeliveryParty", delivery, ns, version=version
+        )
+
+    @api.model
+    def _ubl_add_order_party(
+        self, partner, company, node_name, parent_node, ns, version="2.1"
+    ):
+        commercial_partner = partner.commercial_partner_id
+        party = etree.SubElement(parent_node, ns["cac"] + node_name)
+        if commercial_partner.website:
+            website = etree.SubElement(party, ns["cbc"] + "WebsiteURI")
+            website.text = commercial_partner.website
+        self._ubl_add_party_identification(
+            self.company_id.partner_id, party, ns, version=version
+        )
+        party_name = etree.SubElement(party, ns["cac"] + "PartyName")
+        name = etree.SubElement(party_name, ns["cbc"] + "Name")
+        name.text = commercial_partner.name
+        if partner.lang:
+            self._ubl_add_language(partner.lang, party, ns, version=version)
+        self._ubl_add_address(partner, "PostalAddress", party, ns, version=version)
+        self._ubl_add_party_tax_scheme(commercial_partner, party, ns, version=version)
+        if commercial_partner.is_company or company:
+            self._ubl_add_party_legal_entity(
+                commercial_partner, party, ns, version="2.1"
+            )
+        self._ubl_add_contact(partner, party, ns, version=version)
