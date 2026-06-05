@@ -253,7 +253,7 @@ class SaleOrder(models.Model):
 
         # The order of SellerSupplierParty / BuyerCustomerParty is different
         # between RFQ and Order !
-        self._ubl_add_supplier_party(
+        self._ubl_add_order_supplier_party(
             self.partner_id, False, "SellerSupplierParty", xml_root, ns, version=version
         )
         if version == "2.1":
@@ -306,7 +306,7 @@ class SaleOrder(models.Model):
             )
             party_identification.text = str(self.partner_id.edicode)
 
-        self._ubl_add_supplier_party(
+        self._ubl_add_order_supplier_party(
             False, self.company_id, "SellerSupplierParty", xml_root, ns, version=version
         )
 
@@ -572,4 +572,50 @@ class SaleOrder(models.Model):
             self._ubl_add_party_legal_entity(
                 commercial_partner, party, ns, version="2.1"
             )
-        self._ubl_add_contact(partner, party, ns, version=version)
+
+    @api.model
+    def _ubl_add_order_supplier_party(
+        self, partner, company, node_name, parent_node, ns, version="2.1"
+    ):
+        if company:
+            if partner:
+                assert (
+                    partner.commercial_partner_id == company.partner_id
+                ), "partner is wrong"
+            else:
+                partner = company.partner_id
+        supplier_party_root = etree.SubElement(parent_node, ns["cac"] + node_name)
+        partner_ref = self._ubl_get_customer_assigned_id(partner)
+        if partner_ref:
+            supplier_ref = etree.SubElement(
+                supplier_party_root, ns["cbc"] + "CustomerAssignedAccountID"
+            )
+            supplier_ref.text = partner_ref
+        self._ubl_add_party_of_supplier(
+            partner, company, "Party", supplier_party_root, ns, version=version
+        )
+        return supplier_party_root
+
+    @api.model
+    def _ubl_add_party_of_supplier(
+        self, partner, company, node_name, parent_node, ns, version="2.1"
+    ):
+        commercial_partner = partner.commercial_partner_id
+        party = etree.SubElement(parent_node, ns["cac"] + node_name)
+        if commercial_partner.website:
+            website = etree.SubElement(party, ns["cbc"] + "WebsiteURI")
+            website.text = commercial_partner.website
+        self._ubl_add_party_identification(
+            commercial_partner, party, ns, version=version
+        )
+        party_name = etree.SubElement(party, ns["cac"] + "PartyName")
+        name = etree.SubElement(party_name, ns["cbc"] + "Name")
+        name.text = commercial_partner.name
+        if partner.lang:
+            self._ubl_add_language(partner.lang, party, ns, version=version)
+        self._ubl_add_address(partner, "PostalAddress", party, ns, version=version)
+        self._ubl_add_party_tax_scheme(commercial_partner, party, ns, version=version)
+        if commercial_partner.is_company or company:
+            self._ubl_add_party_legal_entity(
+                commercial_partner, party, ns, version="2.1"
+            )
