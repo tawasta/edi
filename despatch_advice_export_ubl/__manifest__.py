@@ -21,7 +21,7 @@
 {
     "name": "Despatch Advice UBL",
     "summary": "Despatch Advice UBL",
-    "version": "17.0.1.1.4",
+    "version": "17.0.1.1.5",
     "category": "Stock",
     "website": "https://github.com/tawasta/edi",
     "author": "Futural",
