@@ -281,7 +281,7 @@ class StockPicking(models.Model):
                 despatch_root, ns["cac"] + "OrderLineReference"
             )
             line_id = etree.SubElement(sale_line_root, ns["cbc"] + "LineID")
-            line_id.text = str(sale_line.order_line_ref)
+            line_id.text = str(sale_line.id)
             sale_line_id = etree.SubElement(
                 sale_line_root, ns["cbc"] + "SalesOrderLineID"
             )
