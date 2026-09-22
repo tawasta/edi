@@ -1,7 +1,7 @@
 ##############################################################################
 #
 #    Author: Futural Oy
-#    Copyright 2025 Futural Oy (https://futural.fi)
+#    Copyright 2026 Futural Oy (https://futural.fi)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as
@@ -19,18 +19,18 @@
 ##############################################################################
 
 {
-    "name": "Customer Contact for Finvoice 3.0",
-    "summary": "Add customer contact support for Finvoice 3.0 EDI",
-    "version": "17.0.1.0.0",
+    "name": "Factoring Agreement Details for Finvoice 3.0",
+    "summary": "Add factoring agreement details to Finvoice 3.0 EDI",
+    "version": "19.0.1.0.0",
     "category": "Accounting",
     "website": "https://github.com/tawasta/edi",
     "author": "Futural",
     "license": "LGPL-3",
     "application": False,
     "installable": True,
-    "auto-install": True,
+    "auto_install": True,
     "external_dependencies": {"python": [], "bin": []},
-    "depends": ["account_edi_finvoice", "sale_order_customer_contact"],
+    "depends": ["account_edi_finvoice", "partner_factoring_contract"],
     "data": [
         "data/finvoice_template.xml",
     ],
