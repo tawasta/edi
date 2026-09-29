@@ -6,10 +6,10 @@ permissions:
 on:
   push:
     branches:
-      - 17.0
+      - 19.0
 
 jobs:
   open-pr-to-dev:
     uses: tawasta/github-workflows/.github/workflows/open-pr-to-dev.yml@main
     with:
-      target_branch: 17.0-dev
+      target_branch: 19.0-dev
