@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <template id="export_finvoice" inherit_id="account_edi_finvoice.export_finvoice">
+        <xpath expr="//InvoiceDetails" position="after">
+            <t t-set="factoring_contract" t-value="record.factoring_contract_id"/>
+            <FactoringAgreementDetails t-if="record.factoring_contract_id">
+                <FactoringAgreementIdentifier
+                    t-esc="factoring_contract.identifier"
+                />
+                <FactoringTypeCode
+                    t-if="factoring_contract.type_code"
+                    t-esc="factoring_contract.type_code"
+                />
+                <TransmissionListIdentifier
+                    t-if="factoring_contract.transmission_list_identifier"
+                    t-esc="factoring_contract.transmission_list_identifier"
+                />
+                <EndorsementClauseCode
+                    t-if="factoring_contract.endorsement_clause_code"
+                    t-esc="factoring_contract.endorsement_clause_code"
+                />
+                <FactoringFreeText
+                    t-if="factoring_contract.free_text"
+                    t-esc="factoring_contract.free_text"
+                />
+                <FactoringPartyIdentifier
+                    t-if="factoring_contract.party_identifier"
+                    t-esc="factoring_contract.party_identifier"
+                />
+                <FactoringPartyName
+                    t-if="factoring_contract.party_name"
+                    t-esc="factoring_contract.party_name"
+                />
+            </FactoringAgreementDetails>
+        </xpath>
+    </template>
+</odoo>

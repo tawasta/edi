@@ -3,10 +3,10 @@ name: tests
 on:
   pull_request:
     branches:
-      - "17.0*"
+      - "19.0*"
   push:
     branches:
-      - "17.0"
+      - "19.0"
 
 jobs:
   unreleased-deps:
@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - container: ghcr.io/oca/oca-ci/py3.10-odoo17.0:latest
+          - container: ghcr.io/oca/oca-ci/py3.10-odoo19.0:latest
             name: test with Odoo
     services:
       postgres:
