@@ -11,5 +11,6 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [account_edi_finvoice_factoring](account_edi_finvoice_factoring/) | 19.0.1.0.0 |  | Add factoring agreement details to Finvoice 3.0 EDI
+[connector_apix_factoring](connector_apix_factoring/) | 19.0.1.0.0 |  | Add factoring support for Apix invoices
 
 [//]: # (end addons)
