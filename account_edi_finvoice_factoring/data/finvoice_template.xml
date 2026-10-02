@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <odoo>
     <template id="export_finvoice" inherit_id="account_edi_finvoice.export_finvoice">
-        <!-- QWeb outputs the indentation inside the t-foreach on every
-             iteration, so FactoringFreeText is indented like its siblings -->
         <xpath expr="//InvoiceDetails" position="after">
             <t t-set="factoring_contract" t-value="record.factoring_contract_id"/>
             <FactoringAgreementDetails t-if="record.factoring_contract_id">
