@@ -21,7 +21,7 @@
 {
     "name": "Factoring Agreement Details for Finvoice 3.0",
     "summary": "Add factoring agreement details to Finvoice 3.0 EDI",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Accounting",
     "website": "https://github.com/tawasta/edi",
     "author": "Futural",
