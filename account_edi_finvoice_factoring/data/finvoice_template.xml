@@ -23,7 +23,7 @@
                     t-foreach="factoring_contract._get_finvoice_free_texts()"
                     t-as="free_text"
                 >
-                    <FactoringFreeText t-esc="free_text" />
+                <FactoringFreeText t-esc="free_text" />
                 </t>
                 <FactoringPartyIdentifier
                     t-if="factoring_contract.party_identifier"
