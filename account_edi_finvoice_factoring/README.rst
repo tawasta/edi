@@ -17,6 +17,9 @@ Features
 * When an invoice has a Factoring Contract set, the exported Finvoice
   XML includes a ``FactoringAgreementDetails`` block with the
   contract's agreement identifier and, if set, its type code.
+* The contract's free text is split into repeated ``FactoringFreeText``
+  elements of at most 70 characters each, as required by the Finvoice 3.0
+  schema. Lines are broken at word boundaries.
 * Invoices without a Factoring Contract are unaffected - no block is
   added.
 
