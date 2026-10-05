@@ -19,10 +19,12 @@
                     t-if="factoring_contract.endorsement_clause_code"
                     t-esc="factoring_contract.endorsement_clause_code"
                 />
-                <FactoringFreeText
-                    t-if="factoring_contract.free_text"
-                    t-esc="factoring_contract.free_text"
-                />
+                <t
+                    t-foreach="factoring_contract._get_finvoice_free_texts()"
+                    t-as="free_text"
+                >
+                <FactoringFreeText t-esc="free_text" />
+                </t>
                 <FactoringPartyIdentifier
                     t-if="factoring_contract.party_identifier"
                     t-esc="factoring_contract.party_identifier"
