@@ -31,7 +31,6 @@
     "auto_install": True,
     "external_dependencies": {"python": [], "bin": []},
     "depends": ["connector_apix", "account_edi_finvoice_factoring"],
-    "data": [
-    ],
+    "data": [],
     "demo": [],
 }

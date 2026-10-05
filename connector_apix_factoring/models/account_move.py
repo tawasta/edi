@@ -1,5 +1,6 @@
 from odoo import models
 
+
 class AccountMove(models.Model):
     _inherit = "account.move"
 
@@ -11,4 +12,3 @@ class AccountMove(models.Model):
             res = True
 
         return res
-        
