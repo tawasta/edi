@@ -331,7 +331,8 @@ class SaleOrder(models.Model):
         for oline in self.order_line:
             # line_number as third arg comes from sale.order.line id field
             # see https://github.com/OCA/edi/issues/300
-            self._ubl_add_order_line(xml_root, oline, oline.id, ns, version=version)
+            if not oline.display_type:
+                self._ubl_add_order_line(xml_root, oline, oline.id, ns, version=version)
         return xml_root
 
     def generate_ubl_xml_string(self, doc_type, version="2.1"):
