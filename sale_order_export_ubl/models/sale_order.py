@@ -139,59 +139,67 @@ class SaleOrder(models.Model):
             line_item, ns["cbc"] + "Quantity", unitCode=uom.unece_code
         )
         quantity_node.text = str(quantity)
-        if currency and price_subtotal:
-            line_backorder_qty = etree.SubElement(
-                line_item, ns["cbc"] + "MaximumBackorderQuantity", unitCode="C62"
-            )
-            backorder_qty = (
-                0
-                if sale_line.product_uom_qty - sale_line.qty_delivered < 0
-                else sale_line.product_uom_qty - sale_line.qty_delivered
-            )
-            line_backorder_qty.text = str(backorder_qty)
 
+        line_backorder_qty = etree.SubElement(
+            line_item, ns["cbc"] + "MaximumBackorderQuantity", unitCode="C62"
+        )
+        backorder_qty = (
+            0
+            if sale_line.product_uom_qty - sale_line.qty_delivered < 0
+            else sale_line.product_uom_qty - sale_line.qty_delivered
+        )
+        line_backorder_qty.text = str(backorder_qty)
+
+        if currency and price_subtotal:
             line_amount = etree.SubElement(
                 line_item, ns["cbc"] + "LineExtensionAmount", currencyID=currency.name
             )
             line_amount.text = str(price_subtotal)
 
-            line_delivery_root = etree.SubElement(line_item, ns["cac"] + "Delivery")
-            line_delivery_qty = etree.SubElement(
-                line_delivery_root, ns["cbc"] + "Quantity", unitCode="C62"
+        line_delivery_root = etree.SubElement(line_item, ns["cac"] + "Delivery")
+        line_delivery_qty = etree.SubElement(
+            line_delivery_root, ns["cbc"] + "Quantity", unitCode="C62"
+        )
+        line_delivery_qty.text = str(sale_line.qty_delivered)
+
+        actual_delivery_date = ""
+        if sale_line.order_id.effective_date:
+            actual_delivery_date = fields.Datetime.to_string(
+                sale_line.order_id.effective_date
             )
-            line_delivery_qty.text = str(sale_line.qty_delivered)
 
-            actual_delivery_date = ""
-            if sale_line.order_id.effective_date:
-                actual_delivery_date = fields.Datetime.to_string(
-                    sale_line.order_id.effective_date
-                )
+        line_delivery_date = etree.SubElement(
+            line_delivery_root, ns["cbc"] + "ActualDeliveryDate"
+        )
+        line_delivery_date.text = str(actual_delivery_date)
 
-            line_delivery_date = etree.SubElement(
-                line_delivery_root, ns["cbc"] + "ActualDeliveryDate"
+        price_unit = 0.0
+        # Use price_subtotal/qty to compute price_unit to be sure
+        # to get a *tax_excluded* price unit
+        if (
+            not float_is_zero(quantity, precision_digits=qty_precision)
+            and price_subtotal
+        ):
+            price_unit = float_round(
+                price_subtotal / float(quantity), precision_digits=price_precision
             )
-            line_delivery_date.text = str(actual_delivery_date)
 
-            price_unit = 0.0
-            # Use price_subtotal/qty to compute price_unit to be sure
-            # to get a *tax_excluded* price unit
-            if not float_is_zero(quantity, precision_digits=qty_precision):
-                price_unit = float_round(
-                    price_subtotal / float(quantity), precision_digits=price_precision
-                )
-            price = etree.SubElement(line_item, ns["cac"] + "Price")
+        price = etree.SubElement(line_item, ns["cac"] + "Price")
+
+        if currency:
             price_amount = etree.SubElement(
                 price, ns["cbc"] + "PriceAmount", currencyID=currency.name
             )
             price_amount.text = str(price_unit)
 
-            price_type = etree.SubElement(price, ns["cbc"] + "PriceType")
-            price_type.text = "0"
+        price_type = etree.SubElement(price, ns["cbc"] + "PriceType")
+        price_type.text = "0"
 
-            base_qty = etree.SubElement(
-                price, ns["cbc"] + "BaseQuantity", unitCode=uom.unece_code
-            )
-            base_qty.text = "1"  # What else could it be ?
+        base_qty = etree.SubElement(
+            price, ns["cbc"] + "BaseQuantity", unitCode=uom.unece_code
+        )
+        base_qty.text = "1"  # What else could it be ?
+
         self._ubl_add_item(
             name, product, line_item, ns, type_=type_, seller=seller, version=version
         )
